@@ -42,3 +42,6 @@ env/
 # Temporary files
 *.tmp
 *.temp
+
+# Configuration files
+rule.txt
