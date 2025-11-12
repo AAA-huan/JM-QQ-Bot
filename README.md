@@ -1,20 +1,35 @@
-# JMComic QQ 机器人
+# 🎯 JMComic QQ 机器人
 
-一个基于 NapCat 的 QQ 机器人，可以帮助用户下载、管理和分享禁漫天堂的漫画内容。支持漫画下载、查询和发送功能，并提供友好的交互界面。
+<div align="center">
 
-## 🚀 功能特性
+[![Python Version](https://img.shields.io/badge/python-3.7+-blue.svg)](https://www.python.org/downloads/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20Android-lightgrey.svg)](README.md)
 
-- **漫画下载**: 通过漫画ID一键下载漫画
-- **漫画发送**: 发送已下载的漫画文件到QQ聊天
-- **下载状态查询**: 实时查询下载进度和状态
-- **已下载漫画列表**: 查看已下载的漫画内容
-- **自动PDF转换**: 支持将下载的图片转换为PDF格式
-- **异步处理**: 多线程处理下载任务，不阻塞其他功能
-- **通信方式**: 支持WebSocket和HTTP两种通信方式
-- **自动重连**: 网络断开时自动尝试重连，保持稳定连接
-- **日志系统**: 彩色日志输出，便于问题排查
-- **安全认证**: 支持Token验证，保护API安全
-- **自定义配置**: 灵活的下载参数配置
+</div>
+
+> ✨ **智能漫画下载助手** - 基于 NapCat 的高性能 QQ 机器人，专为漫画爱好者设计
+
+一个功能强大的 QQ 机器人，能够帮助用户轻松下载、管理和分享禁漫天堂的漫画内容。支持多平台部署，提供直观的交互界面和丰富的功能特性。
+
+## 📋 功能特性
+
+### 🎯 核心功能
+- 📥 **智能下载** - 通过漫画ID一键下载漫画内容
+- 📤 **便捷发送** - 将已下载的漫画文件直接发送到QQ聊天
+- 🔍 **状态监控** - 可查询下载进度和任务状态
+- 📚 **内容管理** - 查看和管理已下载的漫画列表
+
+### ⚙️ 技术特性
+- 🔄 **异步处理** - 多线程并发处理，不阻塞其他操作
+- 📄 **格式转换** - 自动将图片转换为PDF格式，便于阅读
+- 🔗 **智能重连** - 网络异常时自动重连，确保服务稳定
+
+### 🔧 系统特性
+- 📊 **日志系统** - 彩色分级日志，便于调试和问题排查
+- 🔐 **安全认证** - Token验证机制，保护API接口安全
+- ⚙️ **灵活配置** - 支持自定义下载参数和系统配置
+- 📱 **跨平台** - 支持Windows、Linux、Android
 
 ---
 
@@ -22,71 +37,95 @@
 
 ### 📋 环境要求
 
-- 🐍 Python >= 3.7
-- 🪟 Windows 10 或 Windows 11
-- 💾 至少 2GB 可用存储空间
-- 🌐 稳定的网络连接
+- 🪟 **Windows 10 或更高版本**（支持 Windows Server 2016+）
+- 🐍 **Python >= 3.7**（推荐 Python 3.8+）
+- 💾 **至少 4GB 可用存储空间**（根据下载漫画数量调整）
+- 🌐 **稳定的网络连接**（支持代理配置）
 
 ### 🚀 部署步骤
 
-#### 一、获取必要的文件
+#### 📥 第一步：获取项目文件
 
-1. **安装 Git（如未安装）**
-   ```bash
-   # 下载并安装 Git
-   # 访问 https://git-scm.com/downloads 下载Windows版Git
-   # 安装时选择"Use Git from the Windows Command Prompt"
-   # 验证安装：git --version
-   ```
+##### 1. 安装 Git（如未安装）
+```bash
+# 下载并安装 Git
+# 访问 https://git-scm.com/downloads 下载Windows版Git
+# 安装时选择"Use Git from the Windows Command Prompt"
+# 验证安装：git --version
+```
 
-2. **使用 Git 克隆项目**
-   ```bash
-   # 创建项目文件夹
-   mkdir JMComicBot
-   cd JMComicBot
-   
-   # 使用 Git 克隆项目
-   git clone https://github.com/your-repo/JMComicBot.git .
-   ```
+##### 2. 克隆项目到本地
+```bash
+# 创建项目文件夹
+mkdir JMComicBot
+cd JMComicBot
 
-#### 二、环境配置
+# 使用 Git 克隆项目
+git clone https://github.com/AAA-huan/JM-QQ-Bot.git .
+```
 
-1. **安装 Python**
-   - 访问 [Python官网](https://www.python.org/downloads/) 下载最新版Python
-   - 安装时勾选「Add Python to PATH」选项
+#### ⚙️ 第二步：环境配置
 
-2. **安装依赖包**
-   ```bash
-   # 验证 Python 安装
-   python --version
+##### 1. 安装 Python 环境
+- 访问 [Python官网](https://www.python.org/downloads/) 下载最新版Python
+- 安装时务必勾选「Add Python to PATH」选项
+- 推荐安装 Python 3.8 或更高版本
 
-   # 使用 pip 安装依赖
-   pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple --upgrade
-   ```
+##### 2. 创建虚拟环境
+```bash
+# 创建虚拟环境
+python -m venv venv
 
-#### 三、配置机器人
+# 激活虚拟环境
+# Windows PowerShell:
+venv\Scripts\Activate.ps1
+# 或 Windows 命令提示符:
+venv\Scripts\activate.bat
 
-1. **复制配置文件**
-   ```bash
-   # 复制环境变量示例文件
-   copy .env.example .env
-   
-   # 复制NapCat配置示例
-   copy napcat_config_example.yml napcat_config.yml
-   ```
+# 验证虚拟环境激活
+python --version
+pip --version
+```
 
-2. **编辑配置文件**
-   - 打开 `.env` 文件，修改以下配置：
-   ```ini
-   # NapCat WebSocket 服务配置
-   NAPCAT_WS_URL=ws://localhost:6099/wsapi
-   
-   # 漫画下载路径
-   MANGA_DOWNLOAD_PATH=./downloads
-   
-   # 安全认证 Token
-   TOKEN=your_secure_token_here
-   ```
+##### 3. 安装项目依赖
+```bash
+# 使用 pip 安装依赖（使用阿里云镜像加速）
+pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple --upgrade
+```
+
+#### 🔧 第三步：配置机器人
+
+##### 1. 复制配置文件
+```bash
+# 复制环境变量示例文件
+copy .env.example .env
+
+# 复制NapCat配置示例
+copy napcat_config_example.yml napcat_config.yml
+```
+
+##### 2. 编辑配置文件
+打开 `.env` 文件，修改以下关键配置：
+
+```ini
+# ======================
+# NapCat WebSocket 服务配置
+# ======================
+# WebSocket 服务地址 - 连接NapCat WebSocket服务的URL
+NAPCAT_WS_URL=ws://localhost:6099/wsapi
+
+# ======================
+# 下载配置
+# ======================
+# 漫画下载存储路径 - 漫画文件下载的存储目录
+MANGA_DOWNLOAD_PATH=./downloads
+
+# ======================
+# 安全配置
+# ======================
+# API访问令牌 - 用于API接口的安全认证（可选但建议设置）
+API_TOKEN=your_secure_token_here
+```
 
 #### 四、配置 NapCat
 
@@ -101,7 +140,6 @@
 
 #### 五、启动机器人
 
-1. **手动启动（推荐）**
    ```bash
    # 进入项目目录
    cd JMComicBot
@@ -112,6 +150,35 @@
    # 停止机器人
    Ctrl+C
    ```
+
+#### 🔄 六、常态化启动（后台运行）
+
+##### 1. 启动 NapCat 服务
+- 确保 NapCat 已正确安装并配置
+- 启动 NapCat 服务（具体步骤参考 NapCat 官方文档）
+
+##### 2. 激活虚拟环境并启动机器人
+```bash
+# 进入项目目录
+cd JMComicBot
+
+# 激活虚拟环境
+venv\Scripts\Activate.ps1
+
+# 启动机器人
+python bot.py
+```
+
+##### 3. 验证运行状态
+- 检查任务管理器是否有 `python.exe` 进程
+- 查看日志文件确认机器人正常运行
+
+##### 4. 停止程序
+```bash
+# 方法一：通过任务管理器结束 python.exe 进程
+# 方法二：使用 PowerShell 命令
+Get-Process python | Stop-Process
+```
 
 ### 🎯 使用方法
 
@@ -159,7 +226,7 @@
 3. **使用 Git 克隆项目**
    ```bash
    # 使用 Git 克隆项目到当前目录
-   git clone https://github.com/your-repo/JMComicBot.git .
+   git clone https://github.com/AAA-huan/JM-QQ-Bot.git .
    ```
 
 #### 二、环境配置
@@ -304,10 +371,32 @@ sudo systemctl status JMBot
 sudo journalctl -u JMBot -f
 ```
 
+#### 🔄 启动机器人
+
+##### 1. 启动 NapCat 服务
+- 确保 NapCat 已正确安装并配置
+- 启动 NapCat 服务（具体步骤参考 NapCat 官方文档）
+
+##### 2. 启动机器人
+```bash
+# 进入项目目录
+cd ~/JMBot
+
+# 激活虚拟环境
+source venv/bin/activate
+
+# 启动机器人
+python bot.py
+
+# 停止机器人
+Ctrl+C
+```
+
 #### QQ命令使用
 - `漫画帮助` - 查看帮助信息
-- `漫画下载 350234` - 下载漫画ID为350234的漫画
+- `漫画下载 350234` - 下载指定ID的漫画
 - `发送 350234` - 发送已下载的漫画文件
+- `查询已下载漫画` - 查看已下载漫画列表
 
 ---
 
@@ -348,7 +437,32 @@ sudo journalctl -u JMBot -f
    proot-distro login ubuntu
    ```
 
-2. **配置 Ubuntu 系统**
+2. **用户账户配置（可选但推荐）**
+   直接使用root用户操作所有命令可能有安全风险，建议创建一个普通用户账户：
+   
+**配置说明：**
+   - 创建非root用户可以提高安全性，避免误操作
+   - 添加sudo权限允许用户执行管理员命令
+   - 密码输入时不显示是正常现象
+   - 输入两次密码之后全部回车即可
+   - 建议使用有意义的用户名，如 `jmbot`
+
+      ```bash
+      # 创建用户账户（将 username 替换为你的用户名）
+      adduser username
+      
+      # 添加sudo权限
+      usermod -aG sudo username
+      
+      # 切换到新用户
+      su username
+      
+      # 验证用户权限
+      sudo whoami
+      ```
+   
+
+3. **配置 Ubuntu 系统**
    ```bash
    # 更新包管理器
    apt update && apt upgrade -y
@@ -357,11 +471,14 @@ sudo journalctl -u JMBot -f
    apt install sudo vim git python3-dev python3-venv build-essential screen curl python3-pip
    ```
 
-#### 四、在 Ubuntu 中部署机器人
+#### 三、在 Ubuntu 中部署机器人
 
 1. **获取项目文件**
    ```bash
-   # 创建项目目录（简化目录结构）
+   # 切换到用户主目录
+   cd ~
+
+   # 创建项目目录
    mkdir -p ~/JMBot
    cd ~/JMBot
    
@@ -369,11 +486,20 @@ sudo journalctl -u JMBot -f
    git clone https://github.com/AAA-huan/JM-QQ-Bot.git .
    ```
 
-2. **安装 Python 依赖**
+2. **创建虚拟环境**
    ```bash
-   # 确认Python版本
-   python3 --version
+   # 创建虚拟环境
+   python3 -m venv venv
 
+   # 激活虚拟环境
+   source venv/bin/activate
+
+   # 验证虚拟环境是否激活（应该显示venv前缀）
+   which python3
+   ```
+
+3. **安装 Python 依赖**
+   ```bash
    # 安装项目依赖
    pip3 install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple --upgrade
    ```
@@ -403,7 +529,7 @@ sudo journalctl -u JMBot -f
    chmod 755 downloads
    ```
 
-#### 五、配置 NapCat
+#### 四、配置 NapCat
 
 1. **安装 NapCat**
    ```bash
@@ -421,12 +547,12 @@ sudo journalctl -u JMBot -f
    - 确保端口与机器人配置一致
    - 配置完成后启动 NapCat
 
-#### 六、启动机器人
+#### 五、启动机器人
 
 1. **在 Ubuntu 环境中启动**
    ```bash
    # 进入项目目录
-   cd /opt/JMBot
+   cd ~/JMBot
    
    # 启动机器人
    python3 bot.py
@@ -435,16 +561,36 @@ sudo journalctl -u JMBot -f
    CTRL + C
    ```
 
+#### 🔄 六、常态化启动机器人
 
-### 🎯 使用方法
-
-#### 启动和进入 Ubuntu 环境
+##### 1. 登录 Ubuntu 系统
 ```bash
-# 登录 Ubuntu 系统
+# 在 Termux 中登录 Ubuntu
 proot-distro login ubuntu
 
-# 在Ubuntu中启动机器人
-cd ~/JMBot && python3 bot.py
+# 如果配置了非root用户，切换到该用户
+su username
+```
+
+##### 2. 启动 NapCat 服务
+```bash
+# 在 Ubuntu 中启动 NapCat 服务
+sudo napcat 
+```
+
+##### 3. 启动机器人
+```bash
+# 进入项目目录
+cd ~/JMBot
+
+# 激活虚拟环境
+source venv/bin/activate
+
+# 启动机器人
+python3 bot.py
+
+# 停止机器人
+Ctrl+C
 ```
 
 #### 进程管理
@@ -461,8 +607,9 @@ exit
 
 #### QQ命令使用
 - `漫画帮助` - 查看帮助信息
-- `漫画下载 [ID]` - 下载指定漫画
-- `发送 [ID]` - 发送漫画文件
+- `漫画下载 350234` - 下载指定ID的漫画
+- `发送 350234` - 发送已下载的漫画文件
+- `查询已下载漫画` - 查看已下载漫画列表
 
 ---
 
@@ -476,25 +623,29 @@ exit
 # ======================
 # NapCat 配置
 # ======================
-# WebSocket 服务地址
+# WebSocket 服务地址 - 连接NapCat WebSocket服务的URL
+# 格式：ws://主机地址:端口/wsapi
 NAPCAT_WS_URL=ws://localhost:6099/wsapi
 
 # ======================
 # 下载配置
 # ======================
-# 漫画下载存储路径
+# 漫画下载存储路径 - 漫画文件下载的存储目录
+# 支持相对路径（相对于项目根目录）或绝对路径
 MANGA_DOWNLOAD_PATH=./downloads
 
 # ======================
 # 安全配置
 # ======================
-# API访问令牌（建议设置）
-TOKEN=your_secure_token_here
+# API访问令牌 - 用于API接口的安全认证（可选但建议设置）
+# 设置后需要在NapCat中配置相同的Token进行验证
+API_TOKEN=your_secure_token_here
 
 # ======================
 # 日志配置
 # ======================
-# 日志级别：DEBUG, INFO, WARNING, ERROR
+# 日志级别 - 控制日志输出详细程度
+# 可选值：DEBUG（最详细）, INFO（一般信息）, WARNING（警告）, ERROR（错误）
 LOG_LEVEL=INFO
 ```
 
@@ -503,16 +654,18 @@ LOG_LEVEL=INFO
 如需自定义下载参数，编辑 `option.yml`：
 
 ```yaml
-# 下载线程数
+# 下载线程数 - 同时下载的线程数量（影响下载速度）
 thread_count: 5
 
-# 下载重试次数
+# 下载重试次数 - 下载失败时的重试次数
 retry_count: 3
 
-# 下载超时时间（秒）
+# 下载超时时间（秒） - 单个下载请求的超时时间
 timeout: 30
 
-# 是否启用代理（如需）
+# 代理配置 - 如需通过代理访问，配置代理服务器
+# 格式：http://用户名:密码@代理服务器:端口 或 http://代理服务器:端口
+# 示例：http://127.0.0.1:7890 或 http://user:pass@proxy.example.com:8080
 proxy: null
 ```
 
@@ -520,35 +673,72 @@ proxy: null
 
 ## ❓ 常见问题解答
 
-### Windows 环境问题
+### 🚨 启动与连接问题
 
-#### Q: 机器人启动后无响应？
-A: 检查 NapCat 是否正常运行，确认 WebSocket 配置是否正确。
+#### 1. 机器人无法启动
+**问题描述：** 启动机器人时出现错误或无法连接
+**解决方案：**
+- 检查 NapCat 是否正常运行
+- 确认 `.env` 文件中的 `NAPCAT_WS_URL` 配置正确
+- 检查防火墙设置，确保端口 6099 未被阻止
+- 查看日志文件获取详细错误信息
 
-#### Q: 下载漫画失败？
-A: 检查网络连接，确认漫画ID是否正确，查看错误日志。
+#### 2. WebSocket 连接失败
+**问题描述：** 无法连接到 NapCat WebSocket 服务
+**解决方案：**
+- 确认 NapCat 服务已启动并监听正确端口
+- 检查 `NAPCAT_WS_URL` 格式是否正确（ws://localhost:6099/wsapi）
+- 验证网络连接和防火墙设置
 
-#### Q: 如何找到漫画ID？
-A: 在禁漫天堂网站浏览漫画时，URL中的数字即为漫画ID。
+### 📥 下载相关问题
 
-### Linux 环境问题
+#### 3. 漫画下载失败
+**问题描述：** 下载漫画时出现错误或下载中断
+**解决方案：**
+- 检查网络连接是否稳定
+- 确认下载路径 `MANGA_DOWNLOAD_PATH` 有写入权限
+- 检查磁盘空间是否充足
+- 尝试调整 `thread_count` 参数（降低并发数）
 
-#### Q: 服务启动失败？
-A: 检查系统日志：`sudo journalctl -u JMBot -n 50`
+#### 4. 下载速度过慢
+**问题描述：** 下载速度不理想或频繁中断
+**解决方案：**
+- 调整 `thread_count` 增加并发下载数
+- 配置代理服务器提高连接稳定性
+- 检查网络带宽和服务器状态
 
-#### Q: 端口被占用？
-A: 停止占用端口的进程或检查NapCat WebSocket端口配置。
+### 💬 消息与通信问题
 
-### Android 环境问题
+#### 5. 消息发送失败
+**问题描述：** 机器人无法发送消息到QQ
+**解决方案：**
+- 确认 NapCat 与QQ客户端的连接正常
+- 检查机器人是否被QQ群或好友屏蔽
+- 查看 NapCat 日志确认消息发送状态
 
-#### Q: Termux 中无法安装依赖？
-A: 尝试使用国内镜像源：`pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt`
+#### 6. 命令无响应
+**问题描述：** 发送命令后机器人无反应
+**解决方案：**
+- 确认命令格式正确（如：`下载漫画 漫画ID`）
+- 检查机器人是否在线且正常运行
+- 查看日志文件排查错误信息
 
-#### Q: 存储空间不足？
-A: 清理缓存或使用外部存储：`MANGA_DOWNLOAD_PATH=/sdcard/JMComicBot/downloads`
+### ⚡ 性能与优化
 
-#### Q: 后台运行被杀死？
-A: 使用 Termux 的 wakelock 功能或考虑使用 Termux:Boot。
+#### 7. 性能优化建议
+**问题描述：** 机器人运行缓慢或占用资源过高
+**解决方案：**
+- 调整 `thread_count` 参数控制并发下载数
+- 设置合理的 `timeout` 值避免长时间等待
+- 定期清理下载目录释放磁盘空间
+- 考虑使用代理服务器提高下载稳定性
+
+#### 8. 内存占用过高
+**问题描述：** 机器人占用过多系统内存
+**解决方案：**
+- 限制同时下载的漫画数量
+- 定期重启机器人释放内存
+- 监控日志文件排查内存泄漏
 
 ---
 
@@ -575,10 +765,74 @@ A: 使用 Termux 的 wakelock 功能或考虑使用 Termux:Boot。
 
 ---
 
+## 🤝 贡献指南
+
+我们欢迎任何形式的贡献！如果您想为项目做出贡献，请遵循以下指南：
+
+### 如何贡献
+
+1. **报告问题**
+   - 在GitHub Issues中描述您遇到的问题
+   - 提供详细的错误信息和复现步骤
+
+2. **功能建议**
+   - 提出新的功能想法或改进建议
+   - 描述使用场景和预期效果
+
+
+### 开发环境搭建
+
+```bash
+# 1. 克隆项目
+git clone https://github.com/AAA-huan/JM-QQ-Bot.git
+cd JM-QQ-Bot
+
+# 2. 创建虚拟环境
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# 或 venv\Scripts\activate  # Windows
+
+# 3. 安装开发依赖
+pip install -r requirements.txt
+
+# 4. 运行测试
+python bot.py
+```
+
 ## 📄 许可证
 
-本项目仅供学习和研究使用。使用本工具时，请遵守相关法律法规。
+本项目基于 MIT 许可证开源发布。
+
+```
+MIT License
+
+Copyright (c) 2024 AAA-huan
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
 
 ## ⚠️ 免责声明
 
 本项目仅作为技术学习和研究用途，作者不对任何不当使用本工具造成的后果负责。请用户自行承担使用风险，并确保遵守所在国家或地区的相关法律法规。
+
+**重要提示：**
+- 请尊重版权，仅下载和使用您拥有合法权限的内容
+- 请勿将本项目用于商业用途
+- 请遵守您所在国家或地区的法律法规
+- 使用本工具产生的任何后果由使用者自行承担
