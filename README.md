@@ -656,7 +656,7 @@ exit
 **问题描述：** 无法连接到 NapCat WebSocket 服务
 **解决方案：**
 - 确认 NapCat 服务已启动并监听正确端口
-- 检查 `NAPCAT_WS_URL` 格式是否正确（ws://localhost:6099/wsapi）
+- 检查 `NAPCAT_WS_URL` 格式是否正确（ws://host:port/webui）
 - 验证网络连接和防火墙设置
 
 ### 📥 下载相关问题
