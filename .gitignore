@@ -46,3 +46,5 @@ test_bot_linux.py
 
 # Configuration files
 rule.txt
+napcat_config.yml
+option.yml

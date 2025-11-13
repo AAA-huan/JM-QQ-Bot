@@ -63,14 +63,14 @@ git clone https://github.com/AAA-huan/JM-QQ-Bot.git .
 
 ##### 2. 创建虚拟环境
 ```bash
+# 打开项目文件夹JM-QQ-Bot
+# 鼠标右键打开powershell
 # 创建虚拟环境
 python -m venv venv
 
 # 激活虚拟环境
 # Windows PowerShell:
-venv\Scripts\Activate.ps1
-# 或 Windows 命令提示符:
-venv\Scripts\activate.bat
+.venv\Scripts\Activate
 
 # 验证虚拟环境激活
 python --version
@@ -102,7 +102,8 @@ copy napcat_config_example.yml napcat_config.yml
 # NapCat WebSocket 服务配置
 # ======================
 # WebSocket 服务地址 - 连接NapCat WebSocket服务的URL
-NAPCAT_WS_URL=ws://localhost:6099/wsapi
+# 把host和port替换为你实际的NapCat WebSocket服务地址
+NAPCAT_WS_URL=ws://host:port/wsapi
 
 # ======================
 # 下载配置
@@ -124,7 +125,7 @@ API_TOKEN=your_secure_token_here
    - 启动 NapCat 并扫码登录 QQ 账号
 
 2. **配置 WebSocket 服务**
-   - 访问 NapCat 的 WebUI（默认地址：http://localhost:6099/webui）
+   - 访问 NapCat 的 WebUI,地址可以在启动时的面板里看到,具体请看NapCat官方文档
    - 在「网络配置」→「WebSocket 服务端」中创建服务
    - 配置与 `.env` 文件中的 `NAPCAT_WS_URL` 匹配
 
@@ -153,7 +154,7 @@ API_TOKEN=your_secure_token_here
 cd JMComicBot
 
 # 激活虚拟环境
-venv\Scripts\Activate.ps1
+.venv\Scripts\Activate
 
 # 启动机器人
 python bot.py
@@ -166,8 +167,9 @@ python bot.py
 ##### 4. 停止程序
 ```bash
 # 方法一：通过任务管理器结束 python.exe 进程
+
 # 方法二：使用 PowerShell 命令
-Get-Process python | Stop-Process
+   ctrl + C
 ```
 
 ### 🎯 使用方法
@@ -264,7 +266,8 @@ Get-Process python | Stop-Process
    修改以下配置：
    ```ini
    # NapCat WebSocket 服务配置
-   NAPCAT_WS_URL=ws://localhost:6099/wsapi
+   # 把host和port替换为你实际的NapCat WebSocket服务地址
+   NAPCAT_WS_URL=ws://host:port/wsapi
    
    # 漫画下载路径
    MANGA_DOWNLOAD_PATH=/var/lib/JMBot/downloads
@@ -469,7 +472,7 @@ Ctrl+C
    cd ~
 
    # 创建项目目录
-   mkdir -p ~/JMBot
+   mkdir JMBot
    cd ~/JMBot
    
    # 使用Git克隆项目
@@ -494,7 +497,7 @@ Ctrl+C
    pip3 install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple --upgrade
    ```
 
-3. **配置环境变量**
+4. **配置环境变量**
    ```bash
    # 复制配置文件
    cp .env.example .env
@@ -506,13 +509,14 @@ Ctrl+C
    修改以下配置：
    ```ini
    # NapCat WebSocket 服务配置
-   NAPCAT_WS_URL=ws://localhost:6099/wsapi
+   # 把host和port替换为你实际的NapCat WebSocket服务地址
+   NAPCAT_WS_URL=ws://host:port/wsapi
    
    # 漫画下载路径（使用相对路径，简化目录结构）
    MANGA_DOWNLOAD_PATH=./downloads
    ```
 
-4. **创建数据目录**
+5. **创建数据目录**
    ```bash
    # 创建下载目录（在当前项目目录下）
    mkdir -p downloads
@@ -548,7 +552,7 @@ Ctrl+C
    python3 bot.py
 
    # 停止机器人
-   CTRL + C
+   ctrl + C
    ```
 
 #### 🔄 六、常态化启动机器人
@@ -615,7 +619,7 @@ exit
 # ======================
 # WebSocket 服务地址 - 连接NapCat WebSocket服务的URL
 # 格式：ws://主机地址:端口/wsapi
-NAPCAT_WS_URL=ws://localhost:6099/wsapi
+NAPCAT_WS_URL=ws://host:port/wsapi
 
 # ======================
 # 下载配置
@@ -631,33 +635,8 @@ MANGA_DOWNLOAD_PATH=./downloads
 # 设置后需要在NapCat中配置相同的Token进行验证
 API_TOKEN=your_secure_token_here
 
-# ======================
-# 日志配置
-# ======================
-# 日志级别 - 控制日志输出详细程度
-# 可选值：DEBUG（最详细）, INFO（一般信息）, WARNING（警告）, ERROR（错误）
-LOG_LEVEL=INFO
 ```
 
-### JMComic 下载配置
-
-如需自定义下载参数，编辑 `option.yml`：
-
-```yaml
-# 下载线程数 - 同时下载的线程数量（影响下载速度）
-thread_count: 5
-
-# 下载重试次数 - 下载失败时的重试次数
-retry_count: 3
-
-# 下载超时时间（秒） - 单个下载请求的超时时间
-timeout: 30
-
-# 代理配置 - 如需通过代理访问，配置代理服务器
-# 格式：http://用户名:密码@代理服务器:端口 或 http://代理服务器:端口
-# 示例：http://127.0.0.1:7890 或 http://user:pass@proxy.example.com:8080
-proxy: null
-```
 
 ---
 
