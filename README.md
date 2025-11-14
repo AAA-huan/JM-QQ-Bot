@@ -128,11 +128,14 @@ MANGA_DOWNLOAD_PATH=./downloads
 # WebSocket服务令牌，与NapCat配置中的两个位置保持一致：
 # - WebSocket服务配置部分的`token`字段
 # - 中间件配置部分的`access-token`字段
-# 用于身份验证（可选，留空表示不启用）
-NAPCAT_TOKEN=your_secure_token_here
+# 
+# 简化配置：只需设置NAPCAT_TOKEN一个字段即可
+# 系统会自动将token添加到WebSocket连接URL中，无需手动添加
+NAPCAT_TOKEN=""
 
-# 为兼容原配置保留的令牌字段，功能与NAPCAT_TOKEN相同
-ACCESS_TOKEN=your_secure_token_here
+# 为兼容原配置保留的令牌字段（优先级低于NAPCAT_TOKEN）
+# 如果NAPCAT_TOKEN未设置，系统会尝试使用此值
+ACCESS_TOKEN=
 ```
 
 #### 四、配置 napcat_config.yml
@@ -332,10 +335,15 @@ python bot.py
    ```ini
    # NapCat WebSocket 服务配置
    # 把host和port替换为你实际的NapCat WebSocket服务地址
+   # 系统会自动将token添加到连接URL中，无需手动添加
    NAPCAT_WS_URL=ws://host:port/qq
    
    # 漫画下载路径
    MANGA_DOWNLOAD_PATH=/var/lib/JMBot/downloads
+   
+   # 安全配置
+   # 简化配置：只需设置NAPCAT_TOKEN一个字段即可
+   NAPCAT_TOKEN=""
    ```
 
    **配置NapCat配置文件：**
@@ -618,10 +626,15 @@ Ctrl+C
    ```ini
    # NapCat WebSocket 服务配置
    # 把host和port替换为你实际的NapCat WebSocket服务地址
+   # 系统会自动将token添加到连接URL中，无需手动添加
    NAPCAT_WS_URL=ws://host:port/qq
    
    # 漫画下载路径（使用相对路径，简化目录结构）
    MANGA_DOWNLOAD_PATH=./downloads
+   
+   # 安全配置
+   # 简化配置：只需设置NAPCAT_TOKEN一个字段即可
+   NAPCAT_TOKEN=""
    ```
 
       **配置NapCat配置文件：**

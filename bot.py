@@ -25,18 +25,29 @@ class MangaBot:
         load_dotenv()
 
         # 初始化配置
-        # 优先使用NAPCAT_TOKEN，如果未设置则使用ACCESS_TOKEN作为备用，最后使用API_TOKEN保持兼容性
+        # 简化token配置，只使用一个主要配置项，但保留兼容性
         # 按优先级顺序：NAPCAT_TOKEN > ACCESS_TOKEN > API_TOKEN
-        token = os.getenv("NAPCAT_TOKEN", "")  # 最高优先级：NAPCAT_TOKEN
+        token = os.getenv("NAPCAT_TOKEN", "")  # 主要使用NAPCAT_TOKEN作为唯一配置项
         if not token:
-            token = os.getenv("ACCESS_TOKEN", "")  # 第二优先级：ACCESS_TOKEN
+            token = os.getenv("ACCESS_TOKEN", "")  # 保持向后兼容
         if not token:
-            token = os.getenv("API_TOKEN", "")  # 最低优先级：API_TOKEN (保持向后兼容)
+            token = os.getenv("API_TOKEN", "")  # 保持向后兼容
+            
+        # 构建带token的WebSocket URL（如果有token）
+        base_ws_url = os.getenv("NAPCAT_WS_URL", "ws://localhost:8080/qq")
+        if token:
+            # 检查URL是否已经包含查询参数
+            if "?" in base_ws_url:
+                ws_url = f"{base_ws_url}&token={token}"
+            else:
+                ws_url = f"{base_ws_url}?token={token}"
+        else:
+            ws_url = base_ws_url
             
         self.config: Dict[str, Union[str, int]] = {
             "MANGA_DOWNLOAD_PATH": os.getenv("MANGA_DOWNLOAD_PATH", "./downloads"),
-            "NAPCAT_WS_URL": os.getenv("NAPCAT_WS_URL", "ws://localhost:8080/qq"),
-            "ACCESS_TOKEN": token,  # 统一使用ACCESS_TOKEN作为内部变量名
+            "NAPCAT_WS_URL": ws_url,  # 存储完整的WebSocket URL（可能包含token）
+            "ACCESS_TOKEN": token,  # 保留此变量以保持内部代码兼容性
         }
 
         # 初始化属性
@@ -363,13 +374,24 @@ class MangaBot:
     def connect_websocket(self):
         # 连接WebSocket的函数
         try:
-            self.logger.info(f"正在连接WebSocket: {self.config['NAPCAT_WS_URL']}")
+            # 记录连接信息时不显示token，保护安全
+            ws_url_display = self.config['NAPCAT_WS_URL']
+            if 'token=' in ws_url_display:
+                # 隐藏token值，只显示部分信息
+                parts = ws_url_display.split('token=')
+                ws_url_display = f"{parts[0]}token=****"
+                
+            self.logger.info(f"正在连接WebSocket: {ws_url_display}")
             self.ws = websocket.WebSocketApp(
-                self.config["NAPCAT_WS_URL"],
+                self.config["NAPCAT_WS_URL"],  # 这里使用完整的URL，可能已包含token
                 on_open=self.on_open,
                 on_message=self.on_message,
                 on_error=self.on_error,
                 on_close=self.on_close,
+                # 可选：添加额外的HTTP头进行token认证
+                header={
+                    'Authorization': f'Bearer {self.config["ACCESS_TOKEN"]}' if self.config["ACCESS_TOKEN"] else None
+                }
             )
 
             # 启动WebSocket线程，添加重连选项
