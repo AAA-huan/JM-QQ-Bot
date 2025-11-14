@@ -25,10 +25,17 @@ class MangaBot:
         load_dotenv()
 
         # 初始化配置
+        # 优先使用NAPCAT_TOKEN，如果未设置则使用ACCESS_TOKEN作为备用，最后使用API_TOKEN保持兼容性
+        token = os.getenv("NAPCAT_TOKEN", "")
+        if not token:
+            token = os.getenv("ACCESS_TOKEN", "")
+        if not token:
+            token = os.getenv("API_TOKEN", "")
+            
         self.config: Dict[str, Union[str, int]] = {
             "MANGA_DOWNLOAD_PATH": os.getenv("MANGA_DOWNLOAD_PATH", "./downloads"),
             "NAPCAT_WS_URL": os.getenv("NAPCAT_WS_URL", "ws://localhost:8080/qq"),
-            "API_TOKEN": os.getenv("API_TOKEN", ""),
+            "ACCESS_TOKEN": token,  # 统一使用ACCESS_TOKEN作为内部变量名
         }
 
         # 初始化属性
@@ -253,8 +260,8 @@ class MangaBot:
                 }
 
             # 如果配置了Token，添加到请求中
-            if self.config["API_TOKEN"]:
-                payload["params"]["access_token"] = self.config["API_TOKEN"]
+            if self.config["ACCESS_TOKEN"]:
+                payload["params"]["access_token"] = self.config["ACCESS_TOKEN"]
 
             # 通过WebSocket发送消息
             if self.ws and self.ws.sock and self.ws.sock.connected:
@@ -311,8 +318,8 @@ class MangaBot:
                     "params": {"group_id": group_id, "message": message_segments},
                 }
 
-            if self.config["API_TOKEN"]:
-                payload["params"]["access_token"] = self.config["API_TOKEN"]
+            if self.config["ACCESS_TOKEN"]:
+                payload["params"]["access_token"] = self.config["ACCESS_TOKEN"]
 
             if self.ws and self.ws.sock and self.ws.sock.connected:
                 message_json = json.dumps(payload)

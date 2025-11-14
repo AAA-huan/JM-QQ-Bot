@@ -8,7 +8,12 @@
 
 </div>
 
-**Windows系统已经可以使用了，Linux和安卓的兄弟们先等等，目前这两个平台的部署还在测试中，等测试稳定了再你们再部署，我是为了方便测试才先上传的。**
+**平台状态说明：**
+- ✅ **Windows系统**：已稳定可用
+- 🧪 **Linux系统**：正在测试中，暂不推荐生产环境使用
+- 🧪 **Android系统**：正在测试中，暂不推荐生产环境使用
+
+> **注意**：Linux和Android平台的部署文档目前为测试版本，可能存在兼容性问题，请等待稳定版本发布后再进行部署。
 
 > ✨ **智能漫画下载助手** - 基于 NapCat 的高性能 QQ 机器人，专为漫画爱好者设计
 
@@ -49,11 +54,12 @@
 ##### 2. 克隆项目到本地
 ```bash
 # 创建项目文件夹
-mkdir JMComicBot
-cd JMComicBot
+mkdir JMBot
+cd JMBot
 
 # 使用 Git 克隆项目
 git clone https://github.com/AAA-huan/JM-QQ-Bot.git .
+# 注意：使用.参数表示将代码克隆到当前JMBot目录，不会创建额外的子目录
 ```
 
 #### ⚙️ 第二步：环境配置
@@ -65,14 +71,14 @@ git clone https://github.com/AAA-huan/JM-QQ-Bot.git .
 
 ##### 2. 创建虚拟环境
 ```bash
-# 打开项目文件夹JM-QQ-Bot
+# 确保在JMBot项目文件夹内
 # 鼠标右键打开powershell
 # 创建虚拟环境
 python -m venv venv
 
 # 激活虚拟环境
 # Windows PowerShell:
-.venv\Scripts\Activate
+venv\Scripts\Activate
 
 # 验证虚拟环境激活
 python --version
@@ -105,7 +111,7 @@ copy napcat_config_example.yml napcat_config.yml
 # ======================
 # WebSocket 服务地址 - 连接NapCat WebSocket服务的URL
 # 把host和port替换为你实际的NapCat WebSocket服务地址
-NAPCAT_WS_URL=ws://host:port/wsapi
+NAPCAT_WS_URL=ws://host:port/qq
 
 # ======================
 # 下载配置
@@ -116,8 +122,14 @@ MANGA_DOWNLOAD_PATH=./downloads
 # ======================
 # 安全配置
 # ======================
-# API访问令牌 - 用于API接口的安全认证（可选但建议设置）
-API_TOKEN=your_secure_token_here
+# WebSocket服务令牌，与NapCat配置中的两个位置保持一致：
+# - WebSocket服务配置部分的`token`字段
+# - 中间件配置部分的`access-token`字段
+# 用于身份验证（可选，留空表示不启用）
+NAPCAT_TOKEN=your_secure_token_here
+
+# 为兼容原配置保留的令牌字段，功能与NAPCAT_TOKEN相同
+ACCESS_TOKEN=your_secure_token_here
 ```
 
 #### 四、配置 NapCat
@@ -130,12 +142,14 @@ API_TOKEN=your_secure_token_here
    - 访问 NapCat 的 WebUI,地址可以在启动时的面板里看到,具体请看NapCat官方文档
    - 在「网络配置」→「WebSocket 服务端」中创建服务
    - 配置与 `.env` 文件中的 `NAPCAT_WS_URL` 匹配
+   - 路径(path)必须设置为 `/qq`
+   - 如果启用了token验证，请确保token值与.env文件中的`NAPCAT_TOKEN`保持一致
 
 #### 五、启动机器人
 
    ```bash
    # 进入项目目录
-   cd JMComicBot
+   cd JMBot
    
    # 启动机器人
    python bot.py
@@ -153,10 +167,10 @@ API_TOKEN=your_secure_token_here
 ##### 2. 激活虚拟环境并启动机器人
 ```bash
 # 进入项目目录
-cd JMComicBot
+cd JMBot
 
 # 激活虚拟环境
-.venv\Scripts\Activate
+venv\Scripts\Activate
 
 # 启动机器人
 python bot.py
@@ -221,6 +235,7 @@ python bot.py
    ```bash
    # 使用 Git 克隆项目到当前目录
    git clone https://github.com/AAA-huan/JM-QQ-Bot.git .
+   # 注意：使用.参数表示将代码克隆到当前JMBot目录，不会创建额外的子目录
    ```
 
 #### 二、环境配置
@@ -256,7 +271,7 @@ python bot.py
    cp .env.example .env
    
    # 复制NapCat配置示例
-    cp napcat_config_example.yml napcat_config.yml
+   cp napcat_config_example.yml napcat_config.yml
     
    ```
 
@@ -270,7 +285,7 @@ python bot.py
    ```ini
    # NapCat WebSocket 服务配置
    # 把host和port替换为你实际的NapCat WebSocket服务地址
-   NAPCAT_WS_URL=ws://host:port/wsapi
+   NAPCAT_WS_URL=ws://host:port/qq
    
    # 漫画下载路径
    MANGA_DOWNLOAD_PATH=/var/lib/JMBot/downloads
@@ -285,7 +300,7 @@ python bot.py
    ```ini
    修改以下配置
    - `port`: WebSocket服务端口
-   - `token`: 连接验证令牌（建议修改为安全的值）
+   - `access-token`: 连接验证令牌（建议修改为安全的值，与.env中的ACCESS_TOKEN保持一致）
 
    修改完成后，保存文件并退出编辑器。
    ```
@@ -347,13 +362,13 @@ python bot.py
    sudo systemctl daemon-reload
    
    # 启动服务
-   sudo systemctl start mangabot
-   
-   # 设置开机自启
-   sudo systemctl enable mangabot
-   
-   # 查看服务状态
-   sudo systemctl status mangabot
+sudo systemctl start JMBot
+
+# 设置开机自启
+sudo systemctl enable JMBot
+
+# 查看服务状态
+sudo systemctl status JMBot
    ```
 
 #### 五、配置 NapCat
@@ -495,6 +510,7 @@ Ctrl+C
    
    # 使用Git克隆项目
    git clone https://github.com/AAA-huan/JM-QQ-Bot.git .
+   # 注意：使用.参数表示将代码克隆到当前JMBot目录，不会创建额外的子目录
    ```
 
 2. **创建虚拟环境**
@@ -528,7 +544,7 @@ Ctrl+C
    ```ini
    # NapCat WebSocket 服务配置
    # 把host和port替换为你实际的NapCat WebSocket服务地址
-   NAPCAT_WS_URL=ws://host:port/wsapi
+   NAPCAT_WS_URL=ws://host:port/qq
    
    # 漫画下载路径（使用相对路径，简化目录结构）
    MANGA_DOWNLOAD_PATH=./downloads
@@ -536,8 +552,8 @@ Ctrl+C
 
       **配置NapCat配置文件：**
    ```bash
-    # 复制NapCat配置示例
-    cp napcat_config_example.yml napcat_config.yml
+   # 复制NapCat配置示例
+   cp napcat_config_example.yml napcat_config.yml
     
    # 使用编辑器打开配置文件
    vim napcat_config.yml
@@ -546,7 +562,7 @@ Ctrl+C
    ```ini
    修改以下配置
    - `port`: WebSocket服务端口
-   - `token`: 连接验证令牌（建议修改为安全的值）
+   - `access-token`: 连接验证令牌（建议修改为安全的值，与.env中的ACCESS_TOKEN保持一致）
 
    修改完成后，保存文件并退出编辑器。
    ```
@@ -581,10 +597,10 @@ Ctrl+C
 1. **在 Ubuntu 环境中启动**
    ```bash
    # 进入项目目录
-   cd ~/JMBot/JM-QQ-Bot
-   
-   # 启动机器人
-   python3 bot.py
+cd ~/JMBot
+
+# 启动机器人
+python3 bot.py
 
    # 停止机器人
    ctrl + C
@@ -610,7 +626,7 @@ sudo napcat
 ##### 3. 启动机器人
 ```bash
 # 进入项目目录
-cd ~/JMBot/JM-QQ-Bot
+cd ~/JMBot
 
 # 激活虚拟环境
 source venv/bin/activate
@@ -658,8 +674,10 @@ exit
 **问题描述：** 无法连接到 NapCat WebSocket 服务
 **解决方案：**
 - 确认 NapCat 服务已启动并监听正确端口
-- 检查 `NAPCAT_WS_URL` 格式是否正确（ws://host:port/webui）
+- 检查 `NAPCAT_WS_URL` 格式是否正确（ws://host:port/qq）
 - 验证网络连接和防火墙设置
+- 如果启用了token验证，请确保.env文件中的`NAPCAT_TOKEN`与NapCat配置中的token和access-token字段值完全一致
+- 检查WebSocket路径是否正确设置为`/qq`
 
 ### 📥 下载相关问题
 

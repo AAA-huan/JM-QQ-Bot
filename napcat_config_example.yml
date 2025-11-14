@@ -10,12 +10,16 @@
     # 路径
     path: /qq
     # 是否启用访问令牌（用于认证）
+    # 此token需要与.env文件中的NAPCAT_TOKEN保持一致
+    # 留空表示不启用Token验证
     token: ""
 
 
 # 默认中间件配置
 default-middlewares &default:
-  access-token: ''    # 与.env 中的 ACCESS_TOKEN 保持一致
+  # 与.env文件中的NAPCAT_TOKEN或ACCESS_TOKEN保持一致
+  # 留空表示不启用Token验证
+  access-token: ''    
   filter: ''
   rate-limit:
     enabled: false
