@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 
 class MangaBot:
     # 机器人版本号
-    VERSION = "2.0.0"
+    VERSION = "2.0.2"
     
     def __init__(self) -> None:
         """初始化MangaBot机器人，添加跨平台兼容性检查"""
@@ -793,8 +793,8 @@ class MangaBot:
 
             # 使用jmcomic库下载漫画
             self.logger.info("开始下载漫画ID: %s", manga_id)
-            # 从配置文件创建下载选项对象
-            option = jmcomic.create_option_by_file("C:/huan/JMBot/option_example.yml")
+            # 从配置文件创建下载选项对象（使用相对路径）
+            option = jmcomic.create_option_by_file("option.yml")
             # 确保使用环境变量中的下载路径
             option.dir_rule.base_dir = self.config["MANGA_DOWNLOAD_PATH"]
 
