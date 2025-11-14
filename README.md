@@ -132,20 +132,62 @@ NAPCAT_TOKEN=your_secure_token_here
 ACCESS_TOKEN=your_secure_token_here
 ```
 
-#### 四、配置 NapCat
+#### 四、配置 napcat_config.yml
+
+打开`napcat_config.yml`文件进行配置
+
+
+1. **配置 WebSocket 服务**
+   ```yaml
+   # WebSocket 服务配置
+     - type: websocket-server
+       # 监听地址（通常保持默认即可）
+       host: 0.0.0.0
+       # 监听端口（确保与.env文件中的NAPCAT_WS_URL端口一致）
+       port: 8080
+       # 路径（必须设置为/qq，与.env文件中的NAPCAT_WS_URL路径一致）
+       path: /qq
+       # 是否启用访问令牌（用于认证）
+       # 此token需要与.env文件中的NAPCAT_TOKEN保持一致
+       # 留空表示不启用Token验证
+       token: "your_secure_token_here"
+   ```
+
+2. **配置中间件的访问令牌**
+   ```yaml
+   # 默认中间件配置
+   default-middlewares &default:
+     # 与.env文件中的NAPCAT_TOKEN或ACCESS_TOKEN保持一致
+     # 留空表示不启用Token验证
+     access-token: 'your_secure_token_here'
+   ```
+
+3. **重要配置说明**：
+   - **端口一致性**：确保`port`值与`.env`文件中`NAPCAT_WS_URL`的端口部分一致
+   - **路径设置**：`path`必须设置为`/qq`，这是机器人正常工作的必要条件
+   - **Token一致性**：如果启用token验证，必须确保以下三个位置的token值完全相同：
+     * `napcat_config.yml`中的WebSocket服务`token`字段
+     * `napcat_config.yml`中的中间件`access-token`字段
+     * `.env`文件中的`NAPCAT_TOKEN`或`ACCESS_TOKEN`字段
+   - **禁用token验证**：如果不需要身份验证，请将所有token字段都留空（""或''）
+
+#### 五、配置 NapCat
 
 1. **安装 NapCat**
    - 下载并安装 NapCat：https://github.com/NapNeko/NapCatQQ
    - 启动 NapCat 并扫码登录 QQ 账号
 
-2. **配置 WebSocket 服务**
-   - 访问 NapCat 的 WebUI,地址可以在启动时的面板里看到,具体请看NapCat官方文档
-   - 在「网络配置」→「WebSocket 服务端」中创建服务
-   - 配置与 `.env` 文件中的 `NAPCAT_WS_URL` 匹配
-   - 路径(path)必须设置为 `/qq`
-   - 如果启用了token验证，请确保token值与.env文件中的`NAPCAT_TOKEN`保持一致
+2. **加载配置文件**
+   - 启动NapCat时，确保它能够加载到您配置的`napcat_config.yml`文件
+   - 您也可以通过NapCat的WebUI界面进行配置（WebUI地址可在NapCat启动面板查看）
 
-#### 五、启动机器人
+3. **验证配置**
+   - 访问 NapCat 的 WebUI
+   - 检查「网络配置」→「WebSocket 服务端」中的设置是否与您在文件中配置的一致
+   - 确认路径(path)为 `/qq`
+   - 确认token值与.env文件中的配置一致（如果启用了验证）
+
+#### 六、启动机器人
 
    ```bash
    # 进入项目目录
@@ -158,7 +200,7 @@ ACCESS_TOKEN=your_secure_token_here
    Ctrl+C
    ```
 
-#### 🔄 六、常态化启动
+#### 🔄 七、常态化启动
 
 ##### 1. 启动 NapCat 服务
 - 确保 NapCat 已正确安装并配置
@@ -297,13 +339,37 @@ python bot.py
    vim napcat_config.yml
    ```
 
-   ```ini
-   修改以下配置
-   - `port`: WebSocket服务端口
-   - `access-token`: 连接验证令牌（建议修改为安全的值，与.env中的ACCESS_TOKEN保持一致）
+   修改以下配置内容：
+   
+   ```yaml
+   # WebSocket 服务配置
+     - type: websocket-server
+       # 监听地址（通常保持默认即可）
+       host: 0.0.0.0
+       # 监听端口（确保与.env文件中的NAPCAT_WS_URL端口一致）
+       port: 8080
+       # 路径（必须设置为/qq，与.env文件中的NAPCAT_WS_URL路径一致）
+       path: /qq
+       # 是否启用访问令牌（用于认证）
+       # 此token需要与.env文件中的NAPCAT_TOKEN保持一致
+       token: "your_secure_token_here"
+
+   # 默认中间件配置
+   default-middlewares &default:
+     # 与.env文件中的NAPCAT_TOKEN或ACCESS_TOKEN保持一致
+     access-token: 'your_secure_token_here'
+   ```
+
+   **重要配置说明**：
+   - **端口一致性**：确保`port`值与`.env`文件中`NAPCAT_WS_URL`的端口部分一致
+   - **路径设置**：`path`必须设置为`/qq`，这是机器人正常工作的必要条件
+   - **Token一致性**：如果启用token验证，必须确保以下三个位置的token值完全相同：
+     * `napcat_config.yml`中的WebSocket服务`token`字段
+     * `napcat_config.yml`中的中间件`access-token`字段
+     * `.env`文件中的`NAPCAT_TOKEN`或`ACCESS_TOKEN`字段
+   - **禁用token验证**：如果不需要身份验证，请将所有token字段都留空（""或''）
 
    修改完成后，保存文件并退出编辑器。
-   ```
 
 3. **创建数据目录**
    ```bash
