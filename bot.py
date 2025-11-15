@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 
 class MangaBot:
     # 机器人版本号
-    VERSION = "2.2.2"
+    VERSION = "2.2.4"
     
     def __init__(self) -> None:
         """初始化MangaBot机器人，添加跨平台兼容性检查"""
@@ -312,16 +312,38 @@ class MangaBot:
                 self.send_message(user_id, error_msg, group_id, private)
                 return
 
-            # 获取文件名
+            # 获取文件名并进行特殊字符处理（针对Linux环境下的napcat无法识别特殊字符URI的情况）
             file_name = os.path.basename(file_path)
-            self.logger.debug(f"文件名: {file_name}, 文件路径: {file_path}")
+            # 针对Linux环境下的的napcat无法识别特殊字符的情况，把文件名中的所有特殊字符替换为下划线，并去除文件名中的空格
+            file_name = re.sub(r'[\\/:*?"<>|[\](){}]', "_", file_name).strip()
+            self.logger.debug(f"处理后的文件名: {file_name}, 原文件路径: {file_path}")
+
+            # 实时获取文件的绝对路径，确保路径的完整性和准确性
+            absolute_file_path = os.path.abspath(file_path)
+            self.logger.debug(f"实时获取的绝对路径: {absolute_file_path}")
+
+            # 检查并处理文件路径中的特殊字符，确保URI可以被napcat正确识别
+            normalized_file_path = absolute_file_path  # 使用绝对路径作为基础
+            if platform.system() == "Linux":
+                # 在Linux环境下，对整个文件路径进行特殊字符处理，确保URI兼容性
+                directory = os.path.dirname(absolute_file_path)
+                if directory:
+                    # 标准化目录路径
+                    directory = re.sub(r'[\\/:*?"<>|[\](){}]', "_", directory).strip()
+                    # 处理特殊字符后再重新组合路径
+                    normalized_file_path = os.path.join(directory, file_name)
+                else:
+                    # 如果没有目录，直接使用处理后的文件名
+                    normalized_file_path = file_name
+
+            self.logger.debug(f"最终处理后的文件路径: {normalized_file_path}")
 
             # 直接使用消息段数组方式发送文件，这是NapCat支持的方式
             self.logger.info(f"使用消息段数组方式发送文件")
 
             # 构建消息段数组
             message_segments = [
-                {"type": "file", "data": {"file": file_path, "name": file_name}}
+                {"type": "file", "data": {"file": normalized_file_path, "name": file_name}}
             ]
 
             # 发送消息
@@ -839,8 +861,6 @@ class MangaBot:
             if manga_dir and os.path.exists(manga_dir):
                 # 从manga_dir路径中提取文件夹名称
                 folder_name = os.path.basename(manga_dir)
-                # 针对Linux环境下的napcat无法识别特殊字符的情况，把文件名中的所有特殊字符替换为下划线，并去除文件名中的空格
-                folder_name = re.sub(r'[\\/:*?"<>|[\](){}]', "_", folder_name).strip()
                 pdf_path = os.path.join(download_path, f"{folder_name}.pdf")
                 import shutil
                 import sys
@@ -954,8 +974,6 @@ class MangaBot:
                     if file_name.startswith(f"{manga_id}-") and file_name.endswith(
                         ".pdf"
                     ):
-                        # 针对Linux环境下的的napcat无法识别特殊字符的情况，把文件名中的所有特殊字符替换为下划线，并去除文件名中的空格
-                        file_name = re.sub(r'[\\/:*?"<>|[\](){}]', "_", file_name).strip()
                         pdf_path = os.path.join(download_path, file_name)
                         break
 
@@ -999,7 +1017,7 @@ class MangaBot:
         """安全关闭机器人，确保所有资源都被正确释放"""
         signal.signal(signal.SIGINT, self._safe_sigint_handler)
 
-    def _get_one_char(self) -> str:
+    def _get_one_char(self) -> str|None:
         """跨平台获取单个字符输入"""
         # 检查是否为Linux系统
         if platform.system() != "Linux":
