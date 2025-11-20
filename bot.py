@@ -31,13 +31,8 @@ class MangaBot:
         load_dotenv()
 
         # 初始化配置
-        # 简化token配置，只使用一个主要配置项，但保留兼容性
-        # 按优先级顺序：NAPCAT_TOKEN > ACCESS_TOKEN > API_TOKEN
-        token = os.getenv("NAPCAT_TOKEN", "")  # 主要使用NAPCAT_TOKEN作为唯一配置项
-        if not token:
-            token = os.getenv("ACCESS_TOKEN", "")  # 保持向后兼容
-        if not token:
-            token = os.getenv("API_TOKEN", "")  # 保持向后兼容
+        # 简化token配置，只使用NAPCAT_TOKEN作为唯一的token配置项
+        token = os.getenv("NAPCAT_TOKEN", "")  # 只使用NAPCAT_TOKEN
             
         # 构建带token的WebSocket URL（如果有token）
         base_ws_url = os.getenv("NAPCAT_WS_URL", "ws://localhost:8080/qq")
@@ -53,7 +48,7 @@ class MangaBot:
         self.config: Dict[str, Union[str, int]] = {
             "MANGA_DOWNLOAD_PATH": os.getenv("MANGA_DOWNLOAD_PATH", "./downloads"),
             "NAPCAT_WS_URL": ws_url,  # 存储完整的WebSocket URL（可能包含token）
-            "ACCESS_TOKEN": token,  # 保留此变量以保持内部代码兼容性
+            "NAPCAT_TOKEN": token,  # 使用NAPCAT_TOKEN作为配置键
         }
 
         # 初始化属性
@@ -278,8 +273,8 @@ class MangaBot:
                 }
 
             # 如果配置了Token，添加到请求中
-            if self.config["ACCESS_TOKEN"]:
-                payload["params"]["access_token"] = self.config["ACCESS_TOKEN"]
+            if self.config["NAPCAT_TOKEN"]:
+                payload["params"]["access_token"] = self.config["NAPCAT_TOKEN"]
 
             # 通过WebSocket发送消息
             if self.ws and self.ws.sock and self.ws.sock.connected:
@@ -340,8 +335,8 @@ class MangaBot:
                     "params": {"group_id": group_id, "message": message_segments},
                 }
 
-            if self.config["ACCESS_TOKEN"]:
-                payload["params"]["access_token"] = self.config["ACCESS_TOKEN"]
+            if self.config["NAPCAT_TOKEN"]:
+                payload["params"]["access_token"] = self.config["NAPCAT_TOKEN"]
 
             if self.ws and self.ws.sock and self.ws.sock.connected:
                 message_json = json.dumps(payload)
@@ -401,8 +396,8 @@ class MangaBot:
                 # 可选：添加额外的HTTP头进行token认证
                 header={
                     'Authorization': (
-                        f'Bearer {self.config["ACCESS_TOKEN"]}'
-                        if self.config["ACCESS_TOKEN"]
+                        f'Bearer {self.config["NAPCAT_TOKEN"]}'
+                        if self.config["NAPCAT_TOKEN"]
                         else None
                     )
                 }
