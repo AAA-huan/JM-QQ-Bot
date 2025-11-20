@@ -44,6 +44,7 @@ test_bot_linux.py
 # Temporary files
 *.tmp
 *.temp
+jmbot待办.txt
 
 # Configuration files
 rule.txt
