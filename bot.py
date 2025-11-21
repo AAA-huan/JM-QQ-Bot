@@ -15,8 +15,67 @@ from dotenv import load_dotenv
 
 class MangaBot:
     # 机器人版本号
-    VERSION = "2.2.8"
+    VERSION = "2.3.4"
     
+    def _parse_id_list(self, id_string: str) -> List[str]:
+        """
+        解析ID列表字符串，将逗号分隔的ID转换为列表
+        
+        Args:
+            id_string: 逗号分隔的ID字符串
+            
+        Returns:
+            清理后的ID列表
+        """
+        if not id_string or not id_string.strip():
+            return []
+        
+        # 分割字符串并清理每个ID
+        ids = [id.strip() for id in id_string.split(',') if id.strip()]
+        return ids
+    
+    def _check_user_permission(self, user_id: str, group_id: Optional[str] = None, private: bool = True) -> bool:
+        """
+        检查用户是否有权限使用机器人
+        
+        权限检查规则：
+        1. 全局黑名单优先：如果用户在全局黑名单中，直接拒绝
+        2. 白名单检查：
+           - 私聊：检查用户是否在私信白名单中（如果白名单不为空）
+           - 群聊：检查群组是否在群组白名单中（如果白名单不为空）
+        3. 白名单为空表示不限制
+        
+        Args:
+            user_id: 用户ID
+            group_id: 群组ID（群聊时提供）
+            private: 是否为私聊
+            
+        Returns:
+            bool: 用户是否有权限使用机器人
+        """
+        # 全局黑名单检查（最高优先级）
+        if user_id in self.global_blacklist:
+            self.logger.warning(f"用户 {user_id} 在全局黑名单中，拒绝访问")
+            return False
+        
+        # 私聊权限检查
+        if private:
+            # 如果私信白名单不为空，则检查用户是否在白名单中
+            if self.private_whitelist and user_id not in self.private_whitelist:
+                self.logger.warning(f"用户 {user_id} 不在私信白名单中，拒绝访问")
+                return False
+        # 群聊权限检查
+        else:
+            # 如果群组白名单不为空，则检查群组是否在白名单中
+            if group_id and self.group_whitelist and group_id not in self.group_whitelist:
+                self.logger.warning(f"群组 {group_id} 不在群组白名单中，拒绝访问")
+                return False
+        
+        # 权限检查通过
+        self.logger.debug(f"用户 {user_id} 权限检查通过")
+        return True
+    
+  
     def __init__(self) -> None:
         """初始化MangaBot机器人，添加跨平台兼容性检查"""
         # 配置日志（先初始化日志系统）
@@ -45,8 +104,16 @@ class MangaBot:
         else:
             ws_url = base_ws_url
             
+        # 获取下载路径配置
+        download_path = os.getenv("MANGA_DOWNLOAD_PATH", "./downloads")
+        # 处理Linux系统中的波浪号(~)路径，将其扩展为用户主目录
+        if download_path.startswith('~'):
+            download_path = os.path.expanduser(download_path)
+        # 将相对路径转换为绝对路径，确保父级目录引用能正确解析
+        absolute_download_path = os.path.abspath(download_path)
+        
         self.config: Dict[str, Union[str, int]] = {
-            "MANGA_DOWNLOAD_PATH": os.getenv("MANGA_DOWNLOAD_PATH", "./downloads"),
+            "MANGA_DOWNLOAD_PATH": absolute_download_path,
             "NAPCAT_WS_URL": ws_url,  # 存储完整的WebSocket URL（可能包含token）
             "NAPCAT_TOKEN": token,  # 使用NAPCAT_TOKEN作为配置键
         }
@@ -57,9 +124,18 @@ class MangaBot:
         self.downloading_mangas: Dict[str, bool] = (
             {}
         )  # 跟踪正在下载的漫画 {manga_id: True}
+        
+        # 初始化黑白名单配置
+        self.group_whitelist: List[str] = self._parse_id_list(os.getenv("GROUP_WHITELIST", ""))
+        self.private_whitelist: List[str] = self._parse_id_list(os.getenv("PRIVATE_WHITELIST", ""))
+        self.global_blacklist: List[str] = self._parse_id_list(os.getenv("GLOBAL_BLACKLIST", ""))
+        
+        # 记录黑白名单配置信息
+        self.logger.info(f"黑白名单配置加载完成 - 群组白名单: {len(self.group_whitelist)}个, 私信白名单: {len(self.private_whitelist)}个, 全局黑名单: {len(self.global_blacklist)}个")
 
         # 创建下载目录
         os.makedirs(self.config["MANGA_DOWNLOAD_PATH"], exist_ok=True)
+        self.logger.info(f"下载路径设置为: {self.config['MANGA_DOWNLOAD_PATH']}")
 
     def _check_platform_compatibility(self) -> None:
         """检查操作系统兼容性，确保在Linux和Windows上都能正常运行"""
@@ -257,6 +333,8 @@ class MangaBot:
         private: bool = True,
     ) -> None:
         """发送消息函数"""
+        # 生成消息唯一ID用于追踪
+        message_id = hash(str(time.time()) + message[:50])
         try:
             payload: Dict[str, Any]
             if private:
@@ -279,12 +357,13 @@ class MangaBot:
             # 通过WebSocket发送消息
             if self.ws and self.ws.sock and self.ws.sock.connected:
                 message_json: str = json.dumps(payload)
+                self.logger.info(f"[消息ID:{message_id}] 准备发送 - 用户:{user_id}, 类型:{'私聊' if private else '群聊'}")
                 self.ws.send(message_json)
-                self.logger.info(f"消息发送成功: {message[:20]}...")
+                self.logger.info(f"[消息ID:{message_id}] 发送成功: {message[:20]}...")
             else:
-                self.logger.warning("WebSocket连接未建立，消息发送失败")
+                self.logger.warning(f"[消息ID:{message_id}] WebSocket连接未建立，消息发送失败")
         except Exception as e:
-            self.logger.error(f"发送消息失败: {e}")
+            self.logger.error(f"[消息ID:{message_id}] 发送消息失败: {e}")
 
     def send_file(self, user_id, file_path, group_id=None, private=True):
         # 发送文件函数
@@ -432,10 +511,16 @@ class MangaBot:
 
     def handle_event(self, data):
         # 事件处理函数
-        # 调试日志，记录所有收到的事件
-        self.logger.debug(
-            f"收到事件: {data.get('post_type')}, {data.get('meta_event_type') or data.get('message_type')}"
+        # 生成唯一的事件ID用于追踪
+        event_id = hash(str(data))
+        # 获取时间戳
+        timestamp = data.get('time', time.time())
+        
+        # 详细日志，记录事件的唯一标识符和时间戳
+        self.logger.info(
+            f"收到事件 [ID:{event_id}] - 类型: {data.get('post_type')}, {data.get('meta_event_type') or data.get('message_type')}, 时间戳: {timestamp}"
         )
+        self.logger.debug(f"事件详细数据: {str(data)[:200]}...")
 
         # 直接从消息的根级别获取self_id
         if "self_id" in data and data["self_id"]:
@@ -449,8 +534,14 @@ class MangaBot:
 
         # 处理私聊消息（私聊消息无需@）
         if data.get("post_type") == "message" and data.get("message_type") == "private":
-            user_id = data.get("user_id")
+            user_id = str(data.get("user_id"))
             message = data.get("raw_message")
+            
+            # 黑白名单权限检查
+            if not self._check_user_permission(user_id, private=True):
+                self.logger.warning(f"拒绝处理私信 - 用户 {user_id} 权限不足")
+                return
+                
             self.logger.info(f"收到私聊消息 - 用户{user_id}: {message}")
             # 确保私聊消息始终被处理，不检查@
             try:
@@ -469,9 +560,14 @@ class MangaBot:
                     pass  # 避免嵌套异常
         # 处理群消息（需要被@才回应）
         elif data.get("post_type") == "message" and data.get("message_type") == "group":
-            group_id = data.get("group_id")
-            user_id = data.get("user_id")
+            group_id = str(data.get("group_id"))
+            user_id = str(data.get("user_id"))
             message = data.get("raw_message")
+            
+            # 黑白名单权限检查
+            if not self._check_user_permission(user_id, group_id=group_id, private=False):
+                self.logger.warning(f"拒绝处理群消息 - 群组 {group_id} 用户 {user_id} 权限不足")
+                return
             message_content = data.get("message", "")
 
             self.logger.info(f"收到群消息 - 群{group_id} 用户{user_id}: {message}")
@@ -509,9 +605,12 @@ class MangaBot:
 
     def handle_command(self, user_id, message, group_id=None, private=True):
         # 命令处理函数
+        command_id = hash(str(time.time()) + message[:50])
+        self.logger.info(f"[命令ID:{command_id}] 开始处理命令 - 用户{user_id}, 私聊={private}")
+        
         # 确保message不为None
         if message is None:
-            self.logger.warning("收到空消息，忽略处理")
+            self.logger.warning(f"[命令ID:{command_id}] 收到空消息，忽略处理")
             self.send_message(
                 user_id,
                 "(｡•﹃•｡)叽里咕噜说什么呢，听不懂。\n发送漫画帮助看看我怎么用吧！",
@@ -525,8 +624,8 @@ class MangaBot:
         cmd = command_parts[0].lower() if command_parts else ""
         args = command_parts[1] if len(command_parts) > 1 else ""
 
-        self.logger.debug(
-            f"处理命令 - 用户{user_id}: 命令='{cmd}', 参数='{args}', 私聊={private}"
+        self.logger.info(
+            f"[命令ID:{command_id}] 处理命令 - 用户{user_id}: 命令='{cmd}', 参数='{args}', 私聊={private}"
         )
 
         # 帮助命令
@@ -595,9 +694,11 @@ class MangaBot:
 
     def query_downloaded_manga(self, user_id, group_id, private):
         # 查询已下载的漫画
+        self.logger.info(f"开始处理漫画列表查询 - 用户{user_id}, 调用ID: {id(self)}")
         try:
             # 检查下载目录是否存在
             if not os.path.exists(self.config["MANGA_DOWNLOAD_PATH"]):
+                self.logger.info(f"发送下载目录不存在消息 - 用户{user_id}")
                 self.send_message(
                     user_id,
                     "❌ 下载目录不存在！\n快让主人帮我检查一下ヽ(ﾟДﾟ)ﾉ",
@@ -632,7 +733,9 @@ class MangaBot:
 
                 response += f"总计：{len(pdf_files)} 个漫画PDF文件"
 
+            self.logger.info(f"准备发送漫画列表消息 - 用户{user_id}, 消息长度: {len(response)}")
             self.send_message(user_id, response, group_id, private)
+            self.logger.info(f"漫画列表消息发送完成 - 用户{user_id}")
         except Exception as e:
             self.logger.error(f"查询已下载漫画出错: {e}")
             self.send_message(
