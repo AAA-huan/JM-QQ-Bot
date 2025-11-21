@@ -15,7 +15,121 @@ from dotenv import load_dotenv
 
 class MangaBot:
     # 机器人版本号
-    VERSION = "2.2.8"
+    VERSION = "2.3.0"
+    
+    def _parse_id_list(self, id_string: str) -> List[str]:
+        """
+        解析ID列表字符串，将逗号分隔的ID转换为列表
+        
+        Args:
+            id_string: 逗号分隔的ID字符串
+            
+        Returns:
+            清理后的ID列表
+        """
+        if not id_string or not id_string.strip():
+            return []
+        
+        # 分割字符串并清理每个ID
+        ids = [id.strip() for id in id_string.split(',') if id.strip()]
+        return ids
+    
+    def _check_user_permission(self, user_id: str, group_id: Optional[str] = None, private: bool = True) -> bool:
+        """
+        检查用户是否有权限使用机器人
+        
+        权限检查规则：
+        1. 全局黑名单优先：如果用户在全局黑名单中，直接拒绝
+        2. 白名单检查：
+           - 私聊：检查用户是否在私信白名单中（如果白名单不为空）
+           - 群聊：检查群组是否在群组白名单中（如果白名单不为空）
+        3. 白名单为空表示不限制
+        
+        Args:
+            user_id: 用户ID
+            group_id: 群组ID（群聊时提供）
+            private: 是否为私聊
+            
+        Returns:
+            bool: 用户是否有权限使用机器人
+        """
+        # 全局黑名单检查（最高优先级）
+        if user_id in self.global_blacklist:
+            self.logger.warning(f"用户 {user_id} 在全局黑名单中，拒绝访问")
+            return False
+        
+        # 私聊权限检查
+        if private:
+            # 如果私信白名单不为空，则检查用户是否在白名单中
+            if self.private_whitelist and user_id not in self.private_whitelist:
+                self.logger.warning(f"用户 {user_id} 不在私信白名单中，拒绝访问")
+                return False
+        # 群聊权限检查
+        else:
+            # 如果群组白名单不为空，则检查群组是否在白名单中
+            if group_id and self.group_whitelist and group_id not in self.group_whitelist:
+                self.logger.warning(f"群组 {group_id} 不在群组白名单中，拒绝访问")
+                return False
+        
+        # 权限检查通过
+        self.logger.debug(f"用户 {user_id} 权限检查通过")
+        return True
+    
+    def test_whitelist_blacklist(self) -> None:
+        """
+        测试黑白名单功能（开发调试用）
+        可以在实际使用前通过调用此方法验证配置是否正确
+        """
+        self.logger.info("开始测试黑白名单功能...")
+        
+        # 测试用例
+        test_cases = [
+            # (用户ID, 群组ID, 是否私聊, 预期结果)
+            ("10001", None, True, True),  # 默认情况：白名单为空时应允许
+            ("10001", "20001", False, True),  # 默认情况：白名单为空时应允许
+            ("99999", None, True, False),  # 黑名单用户应拒绝
+            ("99999", "20001", False, False),  # 黑名单用户应拒绝
+        ]
+        
+        # 临时修改配置进行测试
+        original_blacklist = self.global_blacklist.copy()
+        original_private_whitelist = self.private_whitelist.copy()
+        original_group_whitelist = self.group_whitelist.copy()
+        
+        try:
+            # 添加测试黑名单用户
+            self.global_blacklist = ["99999"]
+            
+            # 测试默认情况
+            self.logger.info("测试1: 默认配置（白名单为空）")
+            for user_id, group_id, private, expected in test_cases:
+                result = self._check_user_permission(user_id, group_id, private)
+                self.logger.info(f"  用户{user_id}{', 群聊' if not private else ''} - 期望:{expected}, 实际:{result}")
+            
+            # 测试白名单模式
+            self.logger.info("\n测试2: 启用白名单模式")
+            self.private_whitelist = ["10001", "10002"]
+            self.group_whitelist = ["20001"]
+            
+            # 更新测试用例
+            whitelist_test_cases = [
+                ("10001", None, True, True),  # 白名单用户应允许
+                ("10003", None, True, False),  # 非白名单用户应拒绝
+                ("10001", "20001", False, True),  # 白名单群组应允许
+                ("10001", "20002", False, False),  # 非白名单群组应拒绝
+            ]
+            
+            for user_id, group_id, private, expected in whitelist_test_cases:
+                result = self._check_user_permission(user_id, group_id, private)
+                self.logger.info(f"  用户{user_id}{f', 群组{group_id}' if group_id else ''} - 期望:{expected}, 实际:{result}")
+                
+            self.logger.info("黑白名单功能测试完成！")
+            
+        finally:
+            # 恢复原始配置
+            self.global_blacklist = original_blacklist
+            self.private_whitelist = original_private_whitelist
+            self.group_whitelist = original_group_whitelist
     
     def __init__(self) -> None:
         """初始化MangaBot机器人，添加跨平台兼容性检查"""
@@ -57,6 +171,14 @@ class MangaBot:
         self.downloading_mangas: Dict[str, bool] = (
             {}
         )  # 跟踪正在下载的漫画 {manga_id: True}
+        
+        # 初始化黑白名单配置
+        self.group_whitelist: List[str] = self._parse_id_list(os.getenv("GROUP_WHITELIST", ""))
+        self.private_whitelist: List[str] = self._parse_id_list(os.getenv("PRIVATE_WHITELIST", ""))
+        self.global_blacklist: List[str] = self._parse_id_list(os.getenv("GLOBAL_BLACKLIST", ""))
+        
+        # 记录黑白名单配置信息
+        self.logger.info(f"黑白名单配置加载完成 - 群组白名单: {len(self.group_whitelist)}个, 私信白名单: {len(self.private_whitelist)}个, 全局黑名单: {len(self.global_blacklist)}个")
 
         # 创建下载目录
         os.makedirs(self.config["MANGA_DOWNLOAD_PATH"], exist_ok=True)
@@ -449,8 +571,14 @@ class MangaBot:
 
         # 处理私聊消息（私聊消息无需@）
         if data.get("post_type") == "message" and data.get("message_type") == "private":
-            user_id = data.get("user_id")
+            user_id = str(data.get("user_id"))
             message = data.get("raw_message")
+            
+            # 黑白名单权限检查
+            if not self._check_user_permission(user_id, private=True):
+                self.logger.warning(f"拒绝处理私信 - 用户 {user_id} 权限不足")
+                return
+                
             self.logger.info(f"收到私聊消息 - 用户{user_id}: {message}")
             # 确保私聊消息始终被处理，不检查@
             try:
@@ -469,9 +597,14 @@ class MangaBot:
                     pass  # 避免嵌套异常
         # 处理群消息（需要被@才回应）
         elif data.get("post_type") == "message" and data.get("message_type") == "group":
-            group_id = data.get("group_id")
-            user_id = data.get("user_id")
+            group_id = str(data.get("group_id"))
+            user_id = str(data.get("user_id"))
             message = data.get("raw_message")
+            
+            # 黑白名单权限检查
+            if not self._check_user_permission(user_id, group_id=group_id, private=False):
+                self.logger.warning(f"拒绝处理群消息 - 群组 {group_id} 用户 {user_id} 权限不足")
+                return
             message_content = data.get("message", "")
 
             self.logger.info(f"收到群消息 - 群{group_id} 用户{user_id}: {message}")
