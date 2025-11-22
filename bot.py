@@ -7,11 +7,157 @@ import sys
 import threading
 import time
 import signal
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union, Tuple, Pattern
 
 import jmcomic
 import websocket
 from dotenv import load_dotenv
+
+
+class CommandParser:
+    """
+    命令解析器类，负责解析和验证用户输入的命令和参数
+    提供标准化的命令处理接口，强化输入校验，防止错误输入
+    """
+    
+    def __init__(self) -> None:
+        """初始化命令解析器，定义命令别名映射和参数验证规则"""
+        # 定义命令别名映射，便于统一处理同义命令
+        self.command_aliases: Dict[str, List[str]] = {
+            'help': ['漫画帮助', '帮助漫画'],
+            'download': ['漫画下载', '下载漫画', '下载'],
+            'send': ['发送', '发送漫画', '漫画发送'],
+            'list': ['漫画列表', '列表漫画'],
+            'query': ['查询漫画', '漫画查询'],
+            'version': ['漫画版本', '版本', 'version'],
+            'test_id': ['测试id'],
+            'test_file': ['测试文件']
+        }
+        
+        # 参数验证规则
+        self.param_validators: Dict[str, Optional[Pattern]] = {
+            'download': re.compile(r'^\d+$'),  # 下载命令需要纯数字ID
+            'send': re.compile(r'^\d+$'),      # 发送命令需要纯数字ID
+            'query': re.compile(r'^\d+$')      # 查询命令需要纯数字ID
+        }
+    
+    def parse(self, message: str) -> Tuple[str, str]:
+        """
+        解析用户输入的消息，提取命令和参数
+        
+        Args:
+            message: 用户输入的原始消息
+            
+        Returns:
+            Tuple[str, str]: (标准化的命令名, 参数部分)
+            
+        Raises:
+            ValueError: 当消息为空或格式错误时
+        """
+        if not message or not message.strip():
+            raise ValueError("空消息或仅包含空白字符")
+        
+        # 提取命令和参数
+        parts = message.strip().split(" ", 1)
+        raw_command = parts[0].strip().lower() if parts else ""
+        params = parts[1].strip() if len(parts) > 1 else ""
+        
+        if not raw_command:
+            raise ValueError("未提供命令")
+        
+        # 标准化命令名
+        standard_command = self._normalize_command(raw_command)
+        
+        return standard_command, params
+    
+    def _normalize_command(self, raw_command: str) -> str:
+        """
+        将原始命令名标准化，处理别名
+        
+        Args:
+            raw_command: 原始命令名
+            
+        Returns:
+            str: 标准化后的命令名
+        """
+        # 检查是否是已知命令的别名
+        for standard, aliases in self.command_aliases.items():
+            if raw_command in aliases:
+                return standard
+        
+        # 检查是否是标准命令
+        if raw_command in self.command_aliases:
+            return raw_command
+        
+        # 检查是否是欢迎语
+        welcome_keywords = ['你好', 'hi', 'hello', '在吗']
+        if any(keyword in raw_command for keyword in welcome_keywords):
+            return 'welcome'
+        
+        # 未知命令
+        return 'unknown'
+    
+    def validate_params(self, command: str, params: str) -> bool:
+        """
+        严格验证命令参数是否符合要求
+        
+        Args:
+            command: 标准化的命令名
+            params: 参数部分
+            
+        Returns:
+            bool: 参数是否有效
+        """
+        # 清理参数，移除首尾空格
+        params = params.strip()
+        
+        # 定义不需要参数的命令列表
+        no_param_commands = ['help', 'list', 'version', 'test_id', 'test_file', 'unknown']
+        
+        # 如果命令不需要参数，但提供了参数，返回False
+        if command in no_param_commands and params:
+            return False
+        
+        # 如果命令不需要参数且没有提供参数，返回True
+        if command in no_param_commands:
+            return True
+        
+        # 如果命令需要参数但没有提供参数，返回False
+        if command not in no_param_commands and not params:
+            return False
+        
+        # 使用正则表达式验证需要参数的命令
+        if command in self.param_validators:
+            validator = self.param_validators[command]
+            if validator and not validator.match(params):
+                return False
+        
+        return True
+    
+    def get_error_message(self, command: str) -> str:
+        """
+        获取参数错误时的友好提示消息
+        
+        Args:
+            command: 标准化的命令名
+            
+        Returns:
+            str: 错误提示消息
+        """
+        error_messages = {
+            'download': '❌ 参数错误！请提供有效的漫画ID（纯数字）\n例如：漫画下载 350234',
+            'send': '❌ 参数错误！请提供有效的漫画ID（纯数字）\n例如：发送 350234',
+            'query': '❌ 参数错误！请提供有效的漫画ID（纯数字）\n例如：查询漫画 350234',
+            'help': '❌ 命令格式错误！\'漫画帮助\'命令不需要额外参数\n直接输入：漫画帮助',
+            'list': '❌ 命令格式错误！\'漫画列表\'命令不需要额外参数\n直接输入：漫画列表',
+            'version': '❌ 命令格式错误！\'漫画版本\'命令不需要额外参数\n直接输入：漫画版本',
+            'test_id': '❌ 命令格式错误！\'测试id\'命令不需要额外参数\n直接输入：测试id',
+            'test_file': '❌ 命令格式错误！\'测试文件\'命令不需要额外参数\n直接输入：测试文件',
+            'unknown': '❓ 未知命令，请输入\'漫画帮助\'查看所有可用命令'
+        }
+        
+        return error_messages.get(command, '❌ 命令格式错误，请检查输入')
+
 
 class MangaBot:
     # 机器人版本号
@@ -136,6 +282,10 @@ class MangaBot:
         # 创建下载目录
         os.makedirs(self.config["MANGA_DOWNLOAD_PATH"], exist_ok=True)
         self.logger.info(f"下载路径设置为: {self.config['MANGA_DOWNLOAD_PATH']}")
+        
+        # 初始化命令解析器
+        self.command_parser = CommandParser()
+        self.logger.info("命令解析器初始化完成")
 
     def _check_platform_compatibility(self) -> None:
         """检查操作系统兼容性，确保在Linux和Windows上都能正常运行"""
@@ -604,6 +754,15 @@ class MangaBot:
             self.handle_command(user_id, message, group_id=group_id, private=False)
 
     def handle_command(self, user_id, message, group_id=None, private=True):
+        """
+        处理用户命令的函数，使用命令解析器进行标准化处理
+        
+        Args:
+            user_id: 用户ID
+            message: 原始消息内容
+            group_id: 群组ID（群聊时提供）
+            private: 是否为私聊
+        """
         # 命令处理函数
         command_id = hash(str(time.time()) + message[:50])
         self.logger.info(f"[命令ID:{command_id}] 开始处理命令 - 用户{user_id}, 私聊={private}")
@@ -619,35 +778,40 @@ class MangaBot:
             )
             return
 
-        # 提取命令和参数
-        command_parts = message.strip().split(" ", 1)
-        cmd = command_parts[0].lower() if command_parts else ""
-        args = command_parts[1] if len(command_parts) > 1 else ""
-
+        # 使用命令解析器处理用户输入
+        cmd, args = self.command_parser.parse(message)
+        
         self.logger.info(
-            f"[命令ID:{command_id}] 处理命令 - 用户{user_id}: 命令='{cmd}', 参数='{args}', 私聊={private}"
+            f"[命令ID:{command_id}] 处理命令 - 用户{user_id}: 标准化命令='{cmd}', 参数='{args}', 私聊={private}"
         )
+        
+        # 验证命令参数
+        if not self.command_parser.validate_params(cmd, args):
+            error_msg = self.command_parser.get_error_message(cmd)
+            self.logger.warning(f"[命令ID:{command_id}] 参数验证失败: {error_msg}")
+            self.send_message(user_id, error_msg, group_id, private)
+            return
 
         # 帮助命令
-        if cmd in ["漫画帮助", "帮助漫画"]:
+        if cmd == "help":
             self.send_help(user_id, group_id, private)
         # 漫画下载命令
-        elif cmd in ["漫画下载", "下载漫画", "下载"]:
+        elif cmd == "download":
             self.handle_manga_download(user_id, args, group_id, private)
         # 发送已下载漫画命令
-        elif cmd in ["发送", "发送漫画", '漫画发送']:
+        elif cmd == "send":
             self.handle_manga_send(user_id, args, group_id, private)
         # 查询已下载漫画列表命令
-        elif cmd in ["漫画列表", "列表漫画"]:
+        elif cmd == "list":
             self.query_downloaded_manga(user_id, group_id, private)
         # 查询指定漫画ID是否已下载
-        elif cmd in ["查询漫画", "漫画查询"]:
+        elif cmd == "query":
             self.query_manga_existence(user_id, args, group_id, private)
         # 漫画版本查询命令
-        elif cmd in ["漫画版本", "版本", "version"]:
+        elif cmd == "version":
             self.send_version_info(user_id, group_id, private)
         # 测试命令，显示当前SELF_ID状态
-        elif cmd in ["测试id"]:
+        elif cmd == "test_id":
             # 测试命令，显示机器人当前的SELF_ID状态
             if self.SELF_ID:
                 self.send_message(
@@ -655,7 +819,7 @@ class MangaBot:
                 )
             else:
                 self.send_message(user_id, "❌ 机器人ID未获取", group_id, private)
-        elif cmd in ["测试文件"]:
+        elif cmd == "test_file":
             # 测试文件发送功能
             self.send_message(user_id, "🔍 开始测试文件发送功能...", group_id, private)
 
@@ -743,13 +907,17 @@ class MangaBot:
             )
 
     def query_manga_existence(self, user_id, manga_id, group_id, private):
-        # 查询指定漫画ID是否已下载或正在下载
+        """
+        查询指定漫画ID是否已下载或正在下载
+        
+        参数:
+            user_id: 用户ID
+            manga_id: 漫画ID (由CommandParser验证)
+            group_id: 群ID
+            private: 是否为私聊
+        """
+        self.logger.info(f"查询漫画存在性 - 用户{user_id}, 漫画ID: {manga_id}")
         try:
-            if not manga_id:
-                self.send_message(
-                    user_id, "请输入漫画ID，例如：查询漫画 422866", group_id, private
-                )
-                return
 
             # 检查下载目录是否存在
             if not os.path.exists(self.config["MANGA_DOWNLOAD_PATH"]):
@@ -839,11 +1007,16 @@ class MangaBot:
         self.send_message(user_id, version_text, group_id, private)
 
     def handle_manga_download(self, user_id, manga_id, group_id, private):
-        # 处理漫画下载
-        if not manga_id:
-            response = "请输入漫画ID，例如：漫画下载 422866"
-            self.send_message(user_id, response, group_id, private)
-            return
+        """
+        处理漫画下载请求
+        
+        参数:
+            user_id: 用户ID
+            manga_id: 漫画ID (由CommandParser验证)
+            group_id: 群ID
+            private: 是否为私聊
+        """
+        self.logger.info(f"处理漫画下载请求 - 用户{user_id}, 漫画ID: {manga_id}")
 
         # 在下载前先检查漫画是否已存在
         try:
@@ -1022,11 +1195,16 @@ class MangaBot:
                 del self.downloading_mangas[manga_id]
 
     def handle_manga_send(self, user_id, manga_id, group_id, private):
-        # 处理漫画发送
-        if not manga_id:
-            response = "请输入漫画ID，例如：发送 422866"
-            self.send_message(user_id, response, group_id, private)
-            return
+        """
+        处理漫画发送请求
+        
+        参数:
+            user_id: 用户ID
+            manga_id: 漫画ID (由CommandParser验证)
+            group_id: 群ID
+            private: 是否为私聊
+        """
+        self.logger.info(f"处理漫画发送请求 - 用户{user_id}, 漫画ID: {manga_id}")
 
         # 发送开始发送的消息
         response = f"ฅ( ̳• ·̫ • ̳ฅ)正在查找并准备发送漫画ID：{manga_id}，请稍候..."
