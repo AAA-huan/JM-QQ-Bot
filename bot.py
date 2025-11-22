@@ -389,7 +389,7 @@ class MangaBot:
         loguru_logger.add(
             sys.stdout,
             level="INFO",
-            format="{time:YYYY-MM-DD HH:mm:ss} - {name} - {level} - {message}",
+            format="{time:YYYY-MM-DD HH:mm:ss+08:00} - {name} - {level} - {message}",
             colorize=False,
         )
 
@@ -397,7 +397,7 @@ class MangaBot:
         loguru_logger.add(
             log_file,
             level="DEBUG",
-            format="{time:YYYY-MM-DD HH:mm:ss} - {name} - {level} - {message}",
+            format="{time:YYYY-MM-DD HH:mm:ss+08:00} - {name} - {level} - {message}",
             encoding="utf-8",
             rotation="00:00",  # 每天凌晨滚动日志文件
             retention="7 days",  # 保留7天的日志
