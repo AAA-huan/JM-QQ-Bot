@@ -7,6 +7,7 @@ import threading
 import time
 import signal
 from typing import Any, Dict, List, Optional, Union, Tuple, Pattern
+from datetime import datetime, timezone, timedelta
 
 import jmcomic
 import websocket
@@ -385,11 +386,21 @@ class MangaBot:
         os.makedirs(log_dir, exist_ok=True)
         log_file: str = os.path.join(log_dir, f'{time.strftime("%Y-%m-%d")}.log')
 
+        # 配置东八区时区转换函数
+        def cst_formatter(record):
+            # 创建东八区时区对象
+            cst_timezone = timezone(timedelta(hours=8))
+            # 将UTC时间转换为东八区时间并格式化为字符串
+            cst_time = datetime.fromtimestamp(record["time"].timestamp(), cst_timezone)
+            formatted_time = cst_time.strftime("%Y-%m-%d %H:%M:%S")
+            # 返回完全格式化的日志消息，添加换行符以确保日志条目正确分隔
+            return f"{formatted_time} CST - {record['name']} - {record['level'].name} - {record['message']}\n"
+
         # 配置控制台日志（INFO级别，无彩色）
         loguru_logger.add(
             sys.stdout,
             level="INFO",
-            format="{time:YYYY-MM-DD HH:mm:ss+08:00} - {name} - {level} - {message}",
+            format=cst_formatter,
             colorize=False,
         )
 
@@ -397,7 +408,7 @@ class MangaBot:
         loguru_logger.add(
             log_file,
             level="DEBUG",
-            format="{time:YYYY-MM-DD HH:mm:ss+08:00} - {name} - {level} - {message}",
+            format=cst_formatter,
             encoding="utf-8",
             rotation="00:00",  # 每天凌晨滚动日志文件
             retention="7 days",  # 保留7天的日志
