@@ -173,7 +173,7 @@ class CommandParser:
 
 class MangaBot:
     # 机器人版本号
-    VERSION = "2.3.8"
+    VERSION = "2.3.10"
 
     def _parse_id_list(self, id_string: str) -> List[str]:
         """
@@ -439,13 +439,37 @@ class MangaBot:
 
         # 配置东八区时区转换函数
         def cst_formatter(record):
-            # 创建东八区时区对象
-            cst_timezone = timezone(timedelta(hours=8))
-            # 将UTC时间转换为东八区时间并格式化为字符串
-            cst_time = datetime.fromtimestamp(record["time"].timestamp(), cst_timezone)
-            formatted_time = cst_time.strftime("%Y-%m-%d %H:%M:%S")
-            # 返回完全格式化的日志消息，添加换行符以确保日志条目正确分隔
-            return f"{formatted_time} CST - {record['name']} - {record['level'].name} - {record['message']}\n"
+            try:
+                # 创建东八区时区对象
+                cst_timezone = timezone(timedelta(hours=8))
+                
+                # 安全地获取时间戳，防止KeyError
+                timestamp = record.get("time", time.time())
+                
+                # 处理不同类型的时间戳
+                if hasattr(timestamp, 'timestamp'):
+                    # 如果是datetime对象
+                    cst_time = datetime.fromtimestamp(timestamp.timestamp(), cst_timezone)
+                else:
+                    # 如果是数值型时间戳
+                    cst_time = datetime.fromtimestamp(timestamp, cst_timezone)
+                
+                # 格式化时间字符串
+                formatted_time = cst_time.strftime("%Y-%m-%d %H:%M:%S")
+                
+                # 安全获取其他必要字段
+                name = record.get('name', 'UNKNOWN')
+                level_name = record.get('level', type('obj', (object,), {'name': 'UNKNOWN'})).name
+                message = record.get('message', '')
+                
+                # 返回完全格式化的日志消息，确保所有特殊字符都正确处理
+                # 转义大括号以防止format错误
+                safe_message = str(message).replace('{', '{{').replace('}', '}}')
+                return f"{formatted_time} CST - {name} - {level_name} - {safe_message}\n"
+            except Exception as e:
+                # 如果格式化失败，返回基本错误信息
+                fallback_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                return f"{fallback_time} CST - ERROR - 日志格式化失败: {str(e)}\n"
 
         # 配置控制台日志（INFO级别，无彩色）
         loguru_logger.add(
@@ -672,23 +696,35 @@ class MangaBot:
                     self.logger.error(f"重连WebSocket失败: {e}")
 
     def handle_event(self, data):
-        # 事件处理函数
-        # 生成唯一的事件ID用于追踪
-        event_id = hash(str(data))
-        # 获取时间戳
-        timestamp = data.get("time", time.time())
+        """事件处理函数"""
+        try:
+            # 生成唯一的事件ID用于追踪
+            event_id = hash(str(data))
+            # 安全获取时间戳，确保不会出现KeyError
+            timestamp = data.get("time", time.time())
 
-        # 详细日志，记录事件的唯一标识符和时间戳
-        self.logger.info(
-            f"收到事件 [ID:{event_id}] - 类型: {data.get('post_type')}, {data.get('meta_event_type') or data.get('message_type')}, 时间戳: {timestamp}"
-        )
-        self.logger.debug(f"事件详细数据: {str(data)[:200]}...")
+            # 安全获取事件类型字段，防止KeyError
+            post_type = data.get('post_type', 'UNKNOWN')
+            event_type = data.get('meta_event_type', data.get('message_type', 'UNKNOWN'))
 
-        # 直接从消息的根级别获取self_id
-        if "self_id" in data and data["self_id"]:
-            if not self.SELF_ID or self.SELF_ID != data["self_id"]:
-                self.SELF_ID = data["self_id"]
-                self.logger.info(f"从消息中获取到自身ID: {self.SELF_ID}")
+            # 详细日志，记录事件的唯一标识符和时间戳
+            self.logger.info(
+                f"收到事件 [ID:{event_id}] - 类型: {post_type}, {event_type}, 时间戳: {timestamp}"
+            )
+            self.logger.debug(f"事件详细数据: {str(data)[:200]}...")
+
+            # 直接从消息的根级别获取self_id
+            self_id_value = data.get("self_id")
+            if self_id_value:
+                if not self.SELF_ID or self.SELF_ID != self_id_value:
+                    self.SELF_ID = self_id_value
+                    self.logger.info(f"从消息中获取到自身ID: {self.SELF_ID}")
+        except Exception as e:
+            # 捕获所有异常，防止事件处理中断
+            self.logger.error(f"处理事件时出错: {str(e)}")
+            # 使用更简单的错误记录方式
+            error_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            print(f"{error_time} - 处理事件失败: {str(e)}")
 
         # 处理元事件
         if data.get("post_type") == "meta_event":
@@ -1005,11 +1041,12 @@ class MangaBot:
             help_text += "⚠️ 在群聊中请先@我再发送命令！\n\n"
 
         help_text += "💡 可用命令：\n"
+        help_text += "- 漫画帮助：显示此帮助信息\n"
         help_text += "- 漫画下载 <漫画ID>：下载指定ID的漫画\n"
-        help_text += "- 发送 <漫画ID>：发送指定ID的已下载漫画（只支持PDF格式）\n"
+        help_text += "- 发送漫画 <漫画ID>：发送指定ID的已下载漫画（只支持PDF格式）\n"
         help_text += "- 查询漫画 <漫画ID>：查询指定ID的漫画是否已下载\n"
         help_text += "- 漫画列表：查询已下载的所有漫画\n"
-        help_text += "- 漫画帮助：显示此帮助信息\n"
+        help_text += "- 下载进度：查看当前漫画下载队列的状况\n"
         help_text += "- 漫画版本：显示机器人当前版本信息\n\n"
         help_text += "⚠️ 注意事项：\n"
         help_text += "- 命令与漫画ID之间记得加空格\n"
@@ -1063,29 +1100,29 @@ class MangaBot:
             queued_mangas: List[str] = list(self.queued_tasks.keys())
 
             # 构建响应消息
-            response: str = "📊 **当前下载队列状态** 📊\n\n"
+            response: str = "📊 当前下载队列状态 📊\n\n"
 
             # 添加正在下载的信息
             if downloading_mangas:
-                response += f"⏳ **正在下载**: {len(downloading_mangas)} 个漫画\n"
+                response += f"⏳ 正在下载: {len(downloading_mangas)} 个漫画\n"
                 for manga_id in downloading_mangas:
                     response += f"  • {manga_id}\n"
             else:
-                response += "✅ **当前没有正在下载的漫画**\n"
+                response += "✅ 当前没有正在下载的漫画\n"
 
             response += "\n"
 
             # 添加队列等待信息
             if queued_mangas:
-                response += f"📋 **队列等待**: {len(queued_mangas)} 个漫画\n"
+                response += f"📋 队列等待: {len(queued_mangas)} 个漫画\n"
                 for manga_id in queued_mangas:
                     response += f"  • {manga_id}\n"
             else:
-                response += "✅ **下载队列为空**\n"
+                response += "✅ 下载队列为空\n"
 
             response += "\n"
             response += (
-                f"📝 **总任务数**: {len(downloading_mangas) + len(queued_mangas)}\n"
+                f"📝 总任务数: {len(downloading_mangas) + len(queued_mangas)}\n"
             )
             response += "\n💡 提示: 下载任务将按顺序执行，请耐心等待"
 
@@ -1228,7 +1265,7 @@ class MangaBot:
                 import shutil
                 import sys
 
-                # 安装必要的依赖（如果没有的话）
+                # 安装必要地依赖（如果没有的话）
                 try:
                     from PIL import Image
                 except ImportError:
