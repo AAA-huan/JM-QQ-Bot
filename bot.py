@@ -173,7 +173,7 @@ class CommandParser:
 
 class MangaBot:
     # 机器人版本号
-    VERSION = "2.3.8"
+    VERSION = "2.3.10"
 
     def _parse_id_list(self, id_string: str) -> List[str]:
         """
@@ -439,13 +439,37 @@ class MangaBot:
 
         # 配置东八区时区转换函数
         def cst_formatter(record):
-            # 创建东八区时区对象
-            cst_timezone = timezone(timedelta(hours=8))
-            # 将UTC时间转换为东八区时间并格式化为字符串
-            cst_time = datetime.fromtimestamp(record["time"].timestamp(), cst_timezone)
-            formatted_time = cst_time.strftime("%Y-%m-%d %H:%M:%S")
-            # 返回完全格式化的日志消息，添加换行符以确保日志条目正确分隔
-            return f"{formatted_time} CST - {record['name']} - {record['level'].name} - {record['message']}\n"
+            try:
+                # 创建东八区时区对象
+                cst_timezone = timezone(timedelta(hours=8))
+                
+                # 安全地获取时间戳，防止KeyError
+                timestamp = record.get("time", time.time())
+                
+                # 处理不同类型的时间戳
+                if hasattr(timestamp, 'timestamp'):
+                    # 如果是datetime对象
+                    cst_time = datetime.fromtimestamp(timestamp.timestamp(), cst_timezone)
+                else:
+                    # 如果是数值型时间戳
+                    cst_time = datetime.fromtimestamp(timestamp, cst_timezone)
+                
+                # 格式化时间字符串
+                formatted_time = cst_time.strftime("%Y-%m-%d %H:%M:%S")
+                
+                # 安全获取其他必要字段
+                name = record.get('name', 'UNKNOWN')
+                level_name = record.get('level', type('obj', (object,), {'name': 'UNKNOWN'})).name
+                message = record.get('message', '')
+                
+                # 返回完全格式化的日志消息，确保所有特殊字符都正确处理
+                # 转义大括号以防止format错误
+                safe_message = str(message).replace('{', '{{').replace('}', '}}')
+                return f"{formatted_time} CST - {name} - {level_name} - {safe_message}\n"
+            except Exception as e:
+                # 如果格式化失败，返回基本错误信息
+                fallback_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                return f"{fallback_time} CST - ERROR - 日志格式化失败: {str(e)}\n"
 
         # 配置控制台日志（INFO级别，无彩色）
         loguru_logger.add(
@@ -672,23 +696,35 @@ class MangaBot:
                     self.logger.error(f"重连WebSocket失败: {e}")
 
     def handle_event(self, data):
-        # 事件处理函数
-        # 生成唯一的事件ID用于追踪
-        event_id = hash(str(data))
-        # 获取时间戳
-        timestamp = data.get("time", time.time())
+        """事件处理函数"""
+        try:
+            # 生成唯一的事件ID用于追踪
+            event_id = hash(str(data))
+            # 安全获取时间戳，确保不会出现KeyError
+            timestamp = data.get("time", time.time())
 
-        # 详细日志，记录事件的唯一标识符和时间戳
-        self.logger.info(
-            f"收到事件 [ID:{event_id}] - 类型: {data.get('post_type')}, {data.get('meta_event_type') or data.get('message_type')}, 时间戳: {timestamp}"
-        )
-        self.logger.debug(f"事件详细数据: {str(data)[:200]}...")
+            # 安全获取事件类型字段，防止KeyError
+            post_type = data.get('post_type', 'UNKNOWN')
+            event_type = data.get('meta_event_type', data.get('message_type', 'UNKNOWN'))
 
-        # 直接从消息的根级别获取self_id
-        if "self_id" in data and data["self_id"]:
-            if not self.SELF_ID or self.SELF_ID != data["self_id"]:
-                self.SELF_ID = data["self_id"]
-                self.logger.info(f"从消息中获取到自身ID: {self.SELF_ID}")
+            # 详细日志，记录事件的唯一标识符和时间戳
+            self.logger.info(
+                f"收到事件 [ID:{event_id}] - 类型: {post_type}, {event_type}, 时间戳: {timestamp}"
+            )
+            self.logger.debug(f"事件详细数据: {str(data)[:200]}...")
+
+            # 直接从消息的根级别获取self_id
+            self_id_value = data.get("self_id")
+            if self_id_value:
+                if not self.SELF_ID or self.SELF_ID != self_id_value:
+                    self.SELF_ID = self_id_value
+                    self.logger.info(f"从消息中获取到自身ID: {self.SELF_ID}")
+        except Exception as e:
+            # 捕获所有异常，防止事件处理中断
+            self.logger.error(f"处理事件时出错: {str(e)}")
+            # 使用更简单的错误记录方式
+            error_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            print(f"{error_time} - 处理事件失败: {str(e)}")
 
         # 处理元事件
         if data.get("post_type") == "meta_event":
