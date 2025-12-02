@@ -188,7 +188,7 @@ GLOBAL_BLACKLIST=""
    # 进入项目目录
    # 右键点击项目文件夹，选择在powershell中打开
    # 启动机器人
-   python bot.py
+   python launcher.py
 
    # 停止机器人
    Ctrl+C
@@ -209,7 +209,7 @@ GLOBAL_BLACKLIST=""
    venv\Scripts\Activate
 
    # 启动机器人
-   python bot.py
+   python launcher.py
    ```
 
 ##### 3. 验证运行状态
@@ -383,7 +383,7 @@ GLOBAL_BLACKLIST=""
    User=JMBot
    WorkingDirectory=/opt/JMBot
    Environment=PATH=/opt/JMBot/venv/bin
-   ExecStart=/opt/JMBot/venv/bin/python bot.py
+   ExecStart=/opt/JMBot/venv/bin/python launcher.py
    Restart=always
    RestartSec=10
    
@@ -450,7 +450,7 @@ cd ~/JMBot
 source venv/bin/activate
 
 # 启动机器人
-python bot.py
+python launcher.py
 
 # 停止机器人
 Ctrl+C
